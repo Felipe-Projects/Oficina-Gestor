@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API for Oficina Mecânica Management System
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: clientes
+    description: Customer management
+  - name: veiculos
+    description: Vehicle management
+  - name: pecas
+    description: Parts inventory management
+  - name: servicos
+    description: Service catalog
+  - name: ordens
+    description: Service orders management
+  - name: financeiro
+    description: Financial management
+  - name: orcamentos
+    description: Quotations management
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +37,615 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # CLIENTES
+  /clientes:
+    get:
+      operationId: listClientes
+      tags: [clientes]
+      summary: List all customers
+      responses:
+        "200":
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cliente"
+    post:
+      operationId: createCliente
+      tags: [clientes]
+      summary: Create a customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCliente"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+
+  /clientes/{id}:
+    get:
+      operationId: getCliente
+      tags: [clientes]
+      summary: Get a customer by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Customer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+    put:
+      operationId: updateCliente
+      tags: [clientes]
+      summary: Update a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCliente"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cliente"
+    delete:
+      operationId: deleteCliente
+      tags: [clientes]
+      summary: Delete a customer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # VEICULOS
+  /veiculos:
+    get:
+      operationId: listVeiculos
+      tags: [veiculos]
+      summary: List all vehicles
+      parameters:
+        - name: clienteId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of vehicles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Veiculo"
+    post:
+      operationId: createVeiculo
+      tags: [veiculos]
+      summary: Create a vehicle
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVeiculo"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Veiculo"
+
+  /veiculos/{id}:
+    get:
+      operationId: getVeiculo
+      tags: [veiculos]
+      summary: Get a vehicle by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Vehicle
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Veiculo"
+    put:
+      operationId: updateVeiculo
+      tags: [veiculos]
+      summary: Update a vehicle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVeiculo"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Veiculo"
+    delete:
+      operationId: deleteVeiculo
+      tags: [veiculos]
+      summary: Delete a vehicle
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # PECAS (ESTOQUE)
+  /pecas:
+    get:
+      operationId: listPecas
+      tags: [pecas]
+      summary: List all parts
+      responses:
+        "200":
+          description: List of parts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Peca"
+    post:
+      operationId: createPeca
+      tags: [pecas]
+      summary: Create a part
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePeca"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Peca"
+
+  /pecas/{id}:
+    get:
+      operationId: getPeca
+      tags: [pecas]
+      summary: Get a part by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Part
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Peca"
+    put:
+      operationId: updatePeca
+      tags: [pecas]
+      summary: Update a part
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePeca"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Peca"
+    delete:
+      operationId: deletePeca
+      tags: [pecas]
+      summary: Delete a part
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /pecas/{id}/movimentacao:
+    post:
+      operationId: movimentarPeca
+      tags: [pecas]
+      summary: Stock movement (entrada/saida)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovimentacaoPeca"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Peca"
+
+  # SERVICOS (catalogo)
+  /servicos:
+    get:
+      operationId: listServicos
+      tags: [servicos]
+      summary: List all services in catalog
+      responses:
+        "200":
+          description: List of services
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Servico"
+    post:
+      operationId: createServico
+      tags: [servicos]
+      summary: Create a service in catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServico"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Servico"
+
+  /servicos/{id}:
+    put:
+      operationId: updateServico
+      tags: [servicos]
+      summary: Update a service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateServico"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Servico"
+    delete:
+      operationId: deleteServico
+      tags: [servicos]
+      summary: Delete a service
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ORDENS DE SERVICO
+  /ordens:
+    get:
+      operationId: listOrdens
+      tags: [ordens]
+      summary: List all service orders
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [orcamento, em_andamento, finalizado, entregue]
+      responses:
+        "200":
+          description: List of service orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrdemServico"
+    post:
+      operationId: createOrdem
+      tags: [ordens]
+      summary: Create a service order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOrdemServico"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdemServico"
+
+  /ordens/{id}:
+    get:
+      operationId: getOrdem
+      tags: [ordens]
+      summary: Get a service order by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Service order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdemServicoDetalhada"
+    put:
+      operationId: updateOrdem
+      tags: [ordens]
+      summary: Update a service order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateOrdemServico"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdemServico"
+    delete:
+      operationId: deleteOrdem
+      tags: [ordens]
+      summary: Delete a service order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /ordens/{id}/status:
+    patch:
+      operationId: updateOrdemStatus
+      tags: [ordens]
+      summary: Update order status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatus"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrdemServico"
+
+  # FINANCEIRO
+  /financeiro/despesas:
+    get:
+      operationId: listDespesas
+      tags: [financeiro]
+      summary: List expenses
+      parameters:
+        - name: dataInicio
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Despesa"
+    post:
+      operationId: createDespesa
+      tags: [financeiro]
+      summary: Create an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDespesa"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Despesa"
+
+  /financeiro/despesas/{id}:
+    delete:
+      operationId: deleteDespesa
+      tags: [financeiro]
+      summary: Delete an expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /financeiro/resumo:
+    get:
+      operationId: getResumoFinanceiro
+      tags: [financeiro]
+      summary: Get financial summary
+      parameters:
+        - name: dataInicio
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Financial summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumoFinanceiro"
+
+  /financeiro/fluxo-caixa:
+    get:
+      operationId: getFluxoCaixa
+      tags: [financeiro]
+      summary: Get daily cash flow
+      parameters:
+        - name: dataInicio
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dataFim
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cash flow data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FluxoCaixaDia"
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [ordens]
+      summary: Get dashboard summary data
+      responses:
+        "200":
+          description: Dashboard data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dashboard"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +656,593 @@ components:
       required:
         - status
 
+    Cliente:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        telefone:
+          type: string
+        whatsapp:
+          type: string
+        email:
+          type: string
+        observacoes:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - nome
+        - telefone
+        - createdAt
+
+    CreateCliente:
+      type: object
+      properties:
+        nome:
+          type: string
+        telefone:
+          type: string
+        whatsapp:
+          type: string
+        email:
+          type: string
+        observacoes:
+          type: string
+      required:
+        - nome
+        - telefone
+
+    Veiculo:
+      type: object
+      properties:
+        id:
+          type: integer
+        clienteId:
+          type: integer
+        clienteNome:
+          type: string
+        placa:
+          type: string
+        modelo:
+          type: string
+        marca:
+          type: string
+        ano:
+          type: integer
+        km:
+          type: integer
+        cor:
+          type: string
+        observacoes:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - clienteId
+        - placa
+        - modelo
+        - marca
+        - ano
+        - createdAt
+
+    CreateVeiculo:
+      type: object
+      properties:
+        clienteId:
+          type: integer
+        placa:
+          type: string
+        modelo:
+          type: string
+        marca:
+          type: string
+        ano:
+          type: integer
+        km:
+          type: integer
+        cor:
+          type: string
+        observacoes:
+          type: string
+      required:
+        - clienteId
+        - placa
+        - modelo
+        - marca
+        - ano
+
+    Peca:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        codigo:
+          type: string
+        quantidade:
+          type: integer
+        quantidadeMinima:
+          type: integer
+        valorCusto:
+          type: number
+        valorVenda:
+          type: number
+        estoqueAlerta:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - nome
+        - quantidade
+        - quantidadeMinima
+        - valorCusto
+        - valorVenda
+        - estoqueAlerta
+        - createdAt
+
+    CreatePeca:
+      type: object
+      properties:
+        nome:
+          type: string
+        codigo:
+          type: string
+        quantidade:
+          type: integer
+        quantidadeMinima:
+          type: integer
+        valorCusto:
+          type: number
+        valorVenda:
+          type: number
+      required:
+        - nome
+        - quantidade
+        - quantidadeMinima
+        - valorCusto
+        - valorVenda
+
+    MovimentacaoPeca:
+      type: object
+      properties:
+        tipo:
+          type: string
+          enum: [entrada, saida]
+        quantidade:
+          type: integer
+        motivo:
+          type: string
+      required:
+        - tipo
+        - quantidade
+
+    Servico:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        descricao:
+          type: string
+        valorPadrao:
+          type: number
+        createdAt:
+          type: string
+      required:
+        - id
+        - nome
+        - valorPadrao
+        - createdAt
+
+    CreateServico:
+      type: object
+      properties:
+        nome:
+          type: string
+        descricao:
+          type: string
+        valorPadrao:
+          type: number
+      required:
+        - nome
+        - valorPadrao
+
+    OrdemServico:
+      type: object
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+        clienteId:
+          type: integer
+        clienteNome:
+          type: string
+        veiculoId:
+          type: integer
+        veiculoPlaca:
+          type: string
+        veiculoModelo:
+          type: string
+        responsavel:
+          type: string
+        status:
+          type: string
+          enum: [orcamento, em_andamento, finalizado, entregue]
+        dataEntrada:
+          type: string
+        dataPrevisao:
+          type: string
+        dataFinalizacao:
+          type: string
+        observacoes:
+          type: string
+        totalServicos:
+          type: number
+        totalPecas:
+          type: number
+        total:
+          type: number
+        atrasado:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - numero
+        - clienteId
+        - clienteNome
+        - veiculoId
+        - veiculoPlaca
+        - veiculoModelo
+        - responsavel
+        - status
+        - dataEntrada
+        - totalServicos
+        - totalPecas
+        - total
+        - atrasado
+        - createdAt
+
+    OrdemServicoDetalhada:
+      type: object
+      properties:
+        id:
+          type: integer
+        numero:
+          type: string
+        clienteId:
+          type: integer
+        clienteNome:
+          type: string
+        veiculoId:
+          type: integer
+        veiculoPlaca:
+          type: string
+        veiculoModelo:
+          type: string
+        veiculoMarca:
+          type: string
+        veiculoAno:
+          type: integer
+        veiculoKm:
+          type: integer
+        responsavel:
+          type: string
+        status:
+          type: string
+          enum: [orcamento, em_andamento, finalizado, entregue]
+        dataEntrada:
+          type: string
+        dataPrevisao:
+          type: string
+        dataFinalizacao:
+          type: string
+        observacoes:
+          type: string
+        checklistEntrada:
+          type: object
+          additionalProperties: true
+        checklistEntrega:
+          type: object
+          additionalProperties: true
+        servicos:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrdemServicoItem"
+        pecas:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrdemPecaItem"
+        totalServicos:
+          type: number
+        totalPecas:
+          type: number
+        total:
+          type: number
+        atrasado:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - numero
+        - clienteId
+        - clienteNome
+        - veiculoId
+        - veiculoPlaca
+        - veiculoModelo
+        - veiculoMarca
+        - veiculoAno
+        - responsavel
+        - status
+        - dataEntrada
+        - servicos
+        - pecas
+        - totalServicos
+        - totalPecas
+        - total
+        - atrasado
+        - createdAt
+
+    OrdemServicoItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        servicoId:
+          type: integer
+        nome:
+          type: string
+        valor:
+          type: number
+      required:
+        - id
+        - servicoId
+        - nome
+        - valor
+
+    OrdemPecaItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        pecaId:
+          type: integer
+        nome:
+          type: string
+        codigo:
+          type: string
+        quantidade:
+          type: integer
+        valorUnitario:
+          type: number
+        valorTotal:
+          type: number
+      required:
+        - id
+        - pecaId
+        - nome
+        - quantidade
+        - valorUnitario
+        - valorTotal
+
+    CreateOrdemServico:
+      type: object
+      properties:
+        clienteId:
+          type: integer
+        veiculoId:
+          type: integer
+        responsavel:
+          type: string
+        status:
+          type: string
+          enum: [orcamento, em_andamento, finalizado, entregue]
+        dataEntrada:
+          type: string
+        dataPrevisao:
+          type: string
+        observacoes:
+          type: string
+        checklistEntrada:
+          type: object
+          additionalProperties: true
+        servicos:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddServicoItem"
+        pecas:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddPecaItem"
+      required:
+        - clienteId
+        - veiculoId
+        - responsavel
+        - dataEntrada
+
+    UpdateOrdemServico:
+      type: object
+      properties:
+        clienteId:
+          type: integer
+        veiculoId:
+          type: integer
+        responsavel:
+          type: string
+        status:
+          type: string
+          enum: [orcamento, em_andamento, finalizado, entregue]
+        dataEntrada:
+          type: string
+        dataPrevisao:
+          type: string
+        dataFinalizacao:
+          type: string
+        observacoes:
+          type: string
+        checklistEntrada:
+          type: object
+          additionalProperties: true
+        checklistEntrega:
+          type: object
+          additionalProperties: true
+        servicos:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddServicoItem"
+        pecas:
+          type: array
+          items:
+            $ref: "#/components/schemas/AddPecaItem"
+
+    AddServicoItem:
+      type: object
+      properties:
+        servicoId:
+          type: integer
+        valor:
+          type: number
+      required:
+        - servicoId
+        - valor
+
+    AddPecaItem:
+      type: object
+      properties:
+        pecaId:
+          type: integer
+        quantidade:
+          type: integer
+        valorUnitario:
+          type: number
+      required:
+        - pecaId
+        - quantidade
+        - valorUnitario
+
+    UpdateStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [orcamento, em_andamento, finalizado, entregue]
+        checklistEntrega:
+          type: object
+          additionalProperties: true
+      required:
+        - status
+
+    Despesa:
+      type: object
+      properties:
+        id:
+          type: integer
+        descricao:
+          type: string
+        valor:
+          type: number
+        categoria:
+          type: string
+        data:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - descricao
+        - valor
+        - categoria
+        - data
+        - createdAt
+
+    CreateDespesa:
+      type: object
+      properties:
+        descricao:
+          type: string
+        valor:
+          type: number
+        categoria:
+          type: string
+        data:
+          type: string
+      required:
+        - descricao
+        - valor
+        - categoria
+        - data
+
+    ResumoFinanceiro:
+      type: object
+      properties:
+        totalReceitas:
+          type: number
+        totalDespesas:
+          type: number
+        lucro:
+          type: number
+        ordensFinalizadas:
+          type: integer
+        ticketMedio:
+          type: number
+      required:
+        - totalReceitas
+        - totalDespesas
+        - lucro
+        - ordensFinalizadas
+        - ticketMedio
+
+    FluxoCaixaDia:
+      type: object
+      properties:
+        data:
+          type: string
+        receitas:
+          type: number
+        despesas:
+          type: number
+        saldo:
+          type: number
+      required:
+        - data
+        - receitas
+        - despesas
+        - saldo
+
+    Dashboard:
+      type: object
+      properties:
+        ordensEmAndamento:
+          type: integer
+        ordensAtrasadas:
+          type: integer
+        ordensHoje:
+          type: integer
+        faturamentoDia:
+          type: number
+        faturamentoMes:
+          type: number
+        pecasEstoqueBaixo:
+          type: integer
+        ordens:
+          type: array
+          items:
+            $ref: "#/components/schemas/OrdemServico"
+      required:
+        - ordensEmAndamento
+        - ordensAtrasadas
+        - ordensHoje
+        - faturamentoDia
+        - faturamentoMes
+        - pecasEstoqueBaixo
+        - ordens

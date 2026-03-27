@@ -1,0 +1,14 @@
+packages:
+  "recharts": "For beautiful financial and dashboard charts"
+  "framer-motion": "For page transitions, modal animations, and micro-interactions"
+  "date-fns": "For elegant date formatting in tables and cards"
+  "clsx": "For merging conditional Tailwind classes"
+  "tailwind-merge": "For safely merging Tailwind utility classes"
+  "lucide-react": "For crisp, consistent iconography across the app"
+images:
+  - path: "artifacts/oficina/public/images/logo-icon.png"
+    description: "A minimal, modern geometric logo icon for an auto repair shop. Metallic blue and silver colors, sleek and professional, transparent background."
+    aspect_ratio: "1:1"
+notes:
+  - The application assumes @workspace/api-client-react is available and exports the TanStack Query hooks.
+  - Using a dark-capable industrial aesthetic with Framer Motion for polish.

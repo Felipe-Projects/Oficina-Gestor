@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Gestão de Oficina Mecânica"
+version = "1.0.0"
+id = "artifacts/oficina"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23226
+
+[services.development]
+run = "pnpm --filter @workspace/oficina run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/oficina", "run", "build" ]
+publicDir = "artifacts/oficina/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23226"
+BASE_PATH = "/"
