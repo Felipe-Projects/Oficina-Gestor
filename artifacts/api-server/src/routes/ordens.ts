@@ -412,7 +412,15 @@ router.put("/:id", async (req, res) => {
   const updateData: any = { ...rest };
   if (dataEntrada !== undefined) updateData.dataEntrada = new Date(dataEntrada);
   if (dataPrevisao !== undefined) updateData.dataPrevisao = dataPrevisao ? new Date(dataPrevisao) : null;
-  if (dataFinalizacao !== undefined) updateData.dataFinalizacao = dataFinalizacao ? new Date(dataFinalizacao) : null;
+  if (dataFinalizacao !== undefined) {
+    updateData.dataFinalizacao = dataFinalizacao ? new Date(dataFinalizacao) : null;
+  } else if (rest.status === "finalizado" || rest.status === "entregue") {
+    // Auto-set dataFinalizacao when status changes to finalizado/entregue
+    const [current] = await db.select({ dataFinalizacao: ordensTable.dataFinalizacao }).from(ordensTable).where(eq(ordensTable.id, id));
+    if (!current?.dataFinalizacao) {
+      updateData.dataFinalizacao = new Date();
+    }
+  }
 
   await db.update(ordensTable).set(updateData).where(eq(ordensTable.id, id));
 
