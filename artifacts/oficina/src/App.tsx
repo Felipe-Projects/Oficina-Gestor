@@ -14,6 +14,8 @@ import VeiculosList from "@/pages/veiculos";
 import Estoque from "@/pages/estoque";
 import Financeiro from "@/pages/financeiro";
 import Servicos from "@/pages/servicos";
+import Agendamentos from "@/pages/agendamentos";
+import Agendar from "@/pages/agendar";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -27,21 +29,27 @@ const queryClient = new QueryClient({
 
 function Router() {
   return (
-    <AppLayout>
-      <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/ordens" component={OrdensList} />
-        <Route path="/ordens/nova" component={OrdemForm} />
-        <Route path="/ordens/:id" component={OrdemForm} />
-        <Route path="/clientes" component={ClientesList} />
-        <Route path="/clientes/:id" component={ClienteDetalhes} />
-        <Route path="/veiculos" component={VeiculosList} />
-        <Route path="/estoque" component={Estoque} />
-        <Route path="/financeiro" component={Financeiro} />
-        <Route path="/servicos" component={Servicos} />
-        <Route component={NotFound} />
-      </Switch>
-    </AppLayout>
+    <Switch>
+      <Route path="/agendar" component={Agendar} />
+      <Route>
+        <AppLayout>
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/ordens" component={OrdensList} />
+            <Route path="/ordens/nova" component={OrdemForm} />
+            <Route path="/ordens/:id" component={OrdemForm} />
+            <Route path="/clientes" component={ClientesList} />
+            <Route path="/clientes/:id" component={ClienteDetalhes} />
+            <Route path="/veiculos" component={VeiculosList} />
+            <Route path="/estoque" component={Estoque} />
+            <Route path="/financeiro" component={Financeiro} />
+            <Route path="/servicos" component={Servicos} />
+            <Route path="/agendamentos" component={Agendamentos} />
+            <Route component={NotFound} />
+          </Switch>
+        </AppLayout>
+      </Route>
+    </Switch>
   );
 }
 

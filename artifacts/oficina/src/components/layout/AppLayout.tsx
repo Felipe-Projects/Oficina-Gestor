@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { 
   LayoutDashboard, ClipboardList, Users, Car, 
-  Package, DollarSign, Wrench, Menu, X, Settings, Sun, Moon
+  Package, DollarSign, Wrench, Menu, X, Settings, Sun, Moon, CalendarClock
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
@@ -11,6 +11,7 @@ import { useTheme } from "@/lib/theme";
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/ordens", label: "Ordens de Serviço", icon: ClipboardList },
+  { href: "/agendamentos", label: "Agendamentos", icon: CalendarClock },
   { href: "/clientes", label: "Clientes", icon: Users },
   { href: "/veiculos", label: "Veículos", icon: Car },
   { href: "/estoque", label: "Estoque", icon: Package },

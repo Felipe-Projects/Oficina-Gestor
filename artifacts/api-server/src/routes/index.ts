@@ -8,6 +8,7 @@ import ordensRouter from "./ordens";
 import financeiroRouter from "./financeiro";
 import dashboardRouter from "./dashboard";
 import manutencaoRouter from "./manutencao";
+import agendamentosRouter from "./agendamentos";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use("/ordens", ordensRouter);
 router.use("/financeiro", financeiroRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/manutencao", manutencaoRouter);
+router.use("/agendamentos", agendamentosRouter);
 
 export default router;

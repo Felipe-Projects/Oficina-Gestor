@@ -10,6 +10,7 @@ const servicoSchema = z.object({
   nome: z.string().min(1),
   descricao: z.string().optional(),
   valorPadrao: z.union([z.string(), z.number()]).transform((v) => String(v)),
+  duracaoDias: z.number().int().min(1).optional().nullable(),
 });
 
 function formatServico(s: typeof servicosTable.$inferSelect) {

@@ -8,9 +8,10 @@ interface ServicoForm {
   nome: string;
   descricao: string;
   valorPadrao: string;
+  duracaoDias: string;
 }
 
-const emptyForm: ServicoForm = { nome: "", descricao: "", valorPadrao: "" };
+const emptyForm: ServicoForm = { nome: "", descricao: "", valorPadrao: "", duracaoDias: "" };
 
 export default function Servicos() {
   const queryClient = useQueryClient();
@@ -39,7 +40,7 @@ export default function Servicos() {
 
   function openEdit(s: any) {
     setEditingId(s.id);
-    setForm({ nome: s.nome, descricao: s.descricao ?? "", valorPadrao: String(s.valorPadrao) });
+    setForm({ nome: s.nome, descricao: s.descricao ?? "", valorPadrao: String(s.valorPadrao), duracaoDias: s.duracaoDias ? String(s.duracaoDias) : "" });
     setShowForm(true);
   }
 
@@ -55,6 +56,7 @@ export default function Servicos() {
       nome: form.nome.trim(),
       descricao: form.descricao.trim() || undefined,
       valorPadrao: parseFloat(form.valorPadrao),
+      duracaoDias: form.duracaoDias ? parseInt(form.duracaoDias) : null,
     } as any;
 
     try {
@@ -121,7 +123,7 @@ export default function Servicos() {
             {editingId ? "Editar Serviço" : "Novo Serviço"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="md:col-span-2 space-y-1.5">
                 <label className="text-sm font-medium text-foreground">
                   Nome do Serviço <span className="text-red-500">*</span>
@@ -149,6 +151,21 @@ export default function Servicos() {
                   value={form.valorPadrao}
                   onChange={(e) => setForm({ ...form, valorPadrao: e.target.value })}
                   placeholder="0,00"
+                  className="w-full px-4 py-2.5 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  Duração (dias)
+                </label>
+                <input
+                  data-testid="input-duracao-servico"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={form.duracaoDias}
+                  onChange={(e) => setForm({ ...form, duracaoDias: e.target.value })}
+                  placeholder="Ex: 1, 2, 3..."
                   className="w-full px-4 py-2.5 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none"
                 />
               </div>
@@ -215,6 +232,7 @@ export default function Servicos() {
                 <tr>
                   <th className="px-6 py-4 font-medium">Serviço</th>
                   <th className="px-6 py-4 font-medium">Descrição</th>
+                  <th className="px-6 py-4 font-medium text-center">Duração</th>
                   <th className="px-6 py-4 font-medium text-right">Valor Padrão</th>
                   <th className="px-6 py-4 font-medium text-center">Ações</th>
                 </tr>
@@ -227,6 +245,15 @@ export default function Servicos() {
                     </td>
                     <td className="px-6 py-4 text-muted-foreground max-w-xs truncate">
                       {s.descricao || <span className="italic opacity-50">Sem descrição</span>}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      {(s as any).duracaoDias ? (
+                        <span className="text-xs bg-primary/10 text-primary px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+                          {(s as any).duracaoDias} dia{(s as any).duracaoDias !== 1 ? "s" : ""}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground/50 text-xs italic">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className="font-bold text-foreground text-base">
