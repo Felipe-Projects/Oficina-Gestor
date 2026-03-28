@@ -12,6 +12,7 @@ import ClienteDetalhes from "@/pages/cliente-detalhes";
 import VeiculosList from "@/pages/veiculos";
 import Estoque from "@/pages/estoque";
 import Financeiro from "@/pages/financeiro";
+import Servicos from "@/pages/servicos";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -22,16 +23,6 @@ const queryClient = new QueryClient({
     }
   }
 });
-
-// A simple placeholder for Servicos configuration as required by the nav
-function Servicos() {
-  return (
-    <div className="p-8 text-center border-2 border-dashed border-border rounded-2xl">
-      <h2 className="text-xl font-display font-bold text-foreground">Catálogo de Serviços</h2>
-      <p className="text-muted-foreground mt-2">Gerenciamento do catálogo de serviços será implementado em breve.</p>
-    </div>
-  );
-}
 
 function Router() {
   return (

@@ -5,8 +5,9 @@ import {
   useListClientes, useListVeiculos, useListServicos, useListPecas 
 } from "@workspace/api-client-react";
 import { formatCurrency, cn } from "@/lib/utils";
-import { ArrowLeft, Save, Trash2, PlusCircle, Check } from "lucide-react";
+import { ArrowLeft, Save, Trash2, PlusCircle, FileDown } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { gerarOrcamentoPdf } from "@/lib/gerarOrcamentoPdf";
 
 export default function OrdemForm() {
   const [match, params] = useRoute("/ordens/:id");
@@ -65,6 +66,38 @@ export default function OrdemForm() {
   const totalPecas = pecas.reduce((acc, p) => acc + (p.quantidade * p.valorUnitario), 0);
   const total = totalServicos + totalPecas;
 
+  const handleGerarPdf = () => {
+    if (!existingOs) return;
+    const cliente = clientes?.find(c => c.id === existingOs.clienteId);
+    gerarOrcamentoPdf({
+      numero: existingOs.numero,
+      dataEntrada: existingOs.dataEntrada,
+      dataPrevisao: existingOs.dataPrevisao ?? undefined,
+      clienteNome: existingOs.clienteNome,
+      clienteTelefone: cliente?.telefone ?? undefined,
+      clienteEmail: cliente?.email ?? undefined,
+      veiculoMarca: existingOs.veiculoMarca,
+      veiculoModelo: existingOs.veiculoModelo,
+      veiculoPlaca: existingOs.veiculoPlaca,
+      veiculoAno: existingOs.veiculoAno ?? undefined,
+      veiculoKm: existingOs.veiculoKm ?? undefined,
+      responsavel: existingOs.responsavel,
+      servicos: servicos.map(s => ({
+        nome: servicosCat?.find(c => c.id === s.servicoId)?.nome ?? `Serviço #${s.servicoId}`,
+        valor: s.valor,
+      })),
+      pecas: pecas.map(p => ({
+        nome: pecasCat?.find(c => c.id === p.pecaId)?.nome ?? `Peça #${p.pecaId}`,
+        quantidade: p.quantidade,
+        valorUnitario: p.valorUnitario,
+      })),
+      observacoes: observacoes || undefined,
+      totalServicos,
+      totalPecas,
+      total,
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clienteId || !veiculoId || !responsavel) return alert("Preencha os campos obrigatórios");
@@ -100,16 +133,29 @@ export default function OrdemForm() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 pb-12">
-      <div className="flex items-center gap-4 mb-8">
-        <button onClick={() => setLocation("/ordens")} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <div>
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            {isNew ? "Nova Ordem de Serviço" : `OS #${existingOs?.numero}`}
-          </h1>
-          <p className="text-muted-foreground mt-1">Preencha os dados do serviço abaixo.</p>
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <button onClick={() => setLocation("/ordens")} className="p-2 rounded-full hover:bg-muted text-muted-foreground transition-colors">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-display font-bold text-foreground">
+              {isNew ? "Nova Ordem de Serviço" : `OS #${existingOs?.numero}`}
+            </h1>
+            <p className="text-muted-foreground mt-1">Preencha os dados do serviço abaixo.</p>
+          </div>
         </div>
+        {!isNew && existingOs && (
+          <button
+            type="button"
+            data-testid="button-gerar-pdf"
+            onClick={handleGerarPdf}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-border bg-card hover:bg-muted font-medium text-foreground transition-colors shadow-sm"
+          >
+            <FileDown className="w-4 h-4 text-primary" />
+            Gerar PDF do Orçamento
+          </button>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
