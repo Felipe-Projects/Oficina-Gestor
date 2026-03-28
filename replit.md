@@ -91,6 +91,18 @@ Generated Zod schemas from the OpenAPI spec (e.g. `HealthCheckResponse`). Used b
 
 Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHealthCheck`, `healthCheck`).
 
+### `artifacts/oficina` (`@workspace/oficina`)
+
+React + Vite web application for auto repair shop management ("Gestão de Oficina Mecânica"). Served at `/`. Features: Dashboard, OS management, Clients, Vehicles, Inventory, Financial, Service Catalog, Maintenance alerts, Appointment scheduling system with public booking page at `/agendar`.
+
+### `artifacts/oficina-mobile` (`@workspace/oficina-mobile`)
+
+Expo React Native mobile app for auto repair shop management. Served at `/mobile/`. Connects to the same API server as the web app — all data is shared in real-time. Features: Dashboard, OS list with detail view, Clients, Inventory, Financial. Uses `EXPO_PUBLIC_DOMAIN` for API calls. Scan QR code via Expo Go for native preview.
+
+- API calls: `utils/api.ts` — wraps fetch with `https://${EXPO_PUBLIC_DOMAIN}` base URL
+- 5 tabs: Início (Dashboard), OS, Clientes, Estoque, Finanças
+- Stack screens: `app/os/[id].tsx` (OS detail), `app/cliente/[id].tsx` (client detail)
+
 ### `scripts` (`@workspace/scripts`)
 
 Utility scripts package. Each script is a `.ts` file in `src/` with a corresponding npm script in `package.json`. Run scripts via `pnpm --filter @workspace/scripts run <script>`. Scripts can import any workspace package (e.g., `@workspace/db`) by adding it as a dependency in `scripts/package.json`.
