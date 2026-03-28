@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Calendar, Clock, Car, Phone, Check, X, Trash2, Copy,
-  CalendarClock, MessageCircle, ChevronLeft, ChevronRight, BanIcon, Plus
+  Calendar, Clock, Car, Phone, Check, X, Trash2,
+  CalendarClock, ChevronLeft, ChevronRight, BanIcon, Plus
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { cn } from "@/lib/utils";
@@ -66,102 +66,6 @@ function buildConfirmMsg(ag: Agendamento) {
 
 function buildRecusaMsg(ag: Agendamento) {
   return `Ol\u00E1, ${ag.clienteNome}! ${EMOJI.x} Infelizmente n\u00E3o conseguimos atender seu agendamento para o dia ${formatDate(ag.dataAgendamento)}. Entre em contato para encontrarmos um hor\u00E1rio dispon\u00EDvel. Pedimos desculpas pelo inconveniente.`;
-}
-
-// ─── WHATSAPP MODAL ─────────────────────────────────────────────────────────
-
-interface WaModalProps {
-  agendamento: Agendamento;
-  acao: "confirmar" | "recusar";
-  onClose: () => void;
-  onStatusChange: (id: number, status: string) => void;
-}
-
-function WhatsAppModal({ agendamento: ag, acao, onClose, onStatusChange }: WaModalProps) {
-  const defaultMsg = acao === "confirmar" ? buildConfirmMsg(ag) : buildRecusaMsg(ag);
-  const [msg, setMsg] = useState(defaultMsg);
-  const novoStatus = acao === "confirmar" ? "confirmado" : "cancelado";
-
-  const [copiado, setCopiado] = useState(false);
-
-  function handleSoStatus() {
-    onStatusChange(ag.id, novoStatus);
-    onClose();
-  }
-
-  function handleCopiar() {
-    navigator.clipboard.writeText(msg).then(() => {
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 2000);
-    });
-  }
-
-  const waUrl = buildWhatsAppUrl(ag.clienteTelefone, msg);
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className="bg-card rounded-2xl border border-border shadow-xl w-full max-w-md p-6 space-y-4"
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="font-display font-bold text-lg text-foreground">
-              {acao === "confirmar" ? "Confirmar agendamento" : "Recusar agendamento"}
-            </h2>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {ag.clienteNome} — {ag.clienteTelefone}
-            </p>
-          </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground">
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-green-500" />
-            Mensagem para o cliente
-          </label>
-          <textarea
-            value={msg}
-            onChange={e => setMsg(e.target.value)}
-            rows={5}
-            className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm outline-none focus:border-primary resize-none"
-          />
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Edite a mensagem antes de enviar, se quiser.</p>
-            <button
-              onClick={handleCopiar}
-              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
-            >
-              <Copy className="w-3 h-3" />
-              {copiado ? "Copiado!" : "Copiar texto"}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-2 pt-1">
-          <a
-            href={waUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => { onStatusChange(ag.id, novoStatus); onClose(); }}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors text-center no-underline"
-          >
-            <MessageCircle className="w-4 h-4" />
-            Enviar pelo WhatsApp
-          </a>
-          <button
-            onClick={handleSoStatus}
-            className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          >
-            Só alterar status (sem WhatsApp)
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ─── MINI-CALENDAR PARA DIAS BLOQUEADOS ─────────────────────────────────────
@@ -359,7 +263,6 @@ export default function Agendamentos() {
   const qc = useQueryClient();
   const [filterStatus, setFilterStatus] = useState("todos");
   const [aba, setAba] = useState<"agendamentos" | "bloqueados">("agendamentos");
-  const [waModal, setWaModal] = useState<{ ag: Agendamento; acao: "confirmar" | "recusar" } | null>(null);
 
   const { data: agendamentos, isLoading } = useQuery<Agendamento[]>({
     queryKey: ["/api/agendamentos"],
@@ -393,6 +296,20 @@ export default function Agendamentos() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/agendamentos/dias-bloqueados"] }),
   });
 
+  function handleAcao(ag: Agendamento, acao: "confirmar" | "recusar") {
+    const novoStatus = acao === "confirmar" ? "confirmado" : "cancelado";
+    const msg = acao === "confirmar" ? buildConfirmMsg(ag) : buildRecusaMsg(ag);
+    updateMutation.mutate({ id: ag.id, status: novoStatus });
+    const url = buildWhatsAppUrl(ag.clienteTelefone, msg);
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
   const filtered = (agendamentos ?? []).filter(
     a => filterStatus === "todos" || a.status === filterStatus
   ).sort((a, b) => a.dataAgendamento.localeCompare(b.dataAgendamento));
@@ -405,14 +322,6 @@ export default function Agendamentos() {
 
   return (
     <>
-      {waModal && (
-        <WhatsAppModal
-          agendamento={waModal.ag}
-          acao={waModal.acao}
-          onClose={() => setWaModal(null)}
-          onStatusChange={(id, status) => updateMutation.mutate({ id, status })}
-        />
-      )}
 
       <div className="space-y-6 pb-12">
         {/* Header */}
@@ -545,14 +454,16 @@ export default function Agendamentos() {
                           {ag.status === "pendente" && (
                             <>
                               <button
-                                onClick={() => setWaModal({ ag, acao: "confirmar" })}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-semibold hover:bg-green-600 transition-colors"
+                                onClick={() => handleAcao(ag, "confirmar")}
+                                disabled={updateMutation.isPending}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs font-semibold hover:bg-green-600 transition-colors disabled:opacity-50"
                               >
                                 <Check className="w-3.5 h-3.5" /> Confirmar
                               </button>
                               <button
-                                onClick={() => setWaModal({ ag, acao: "recusar" })}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold hover:bg-red-200 transition-colors"
+                                onClick={() => handleAcao(ag, "recusar")}
+                                disabled={updateMutation.isPending}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 rounded-lg text-xs font-semibold hover:bg-red-200 transition-colors disabled:opacity-50"
                               >
                                 <X className="w-3.5 h-3.5" /> Recusar
                               </button>
