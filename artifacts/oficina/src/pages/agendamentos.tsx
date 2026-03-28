@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Calendar, Clock, Car, Phone, Check, X, Trash2,
+  Calendar, Clock, Car, Phone, Check, X, Trash2, Copy,
   CalendarClock, MessageCircle, ChevronLeft, ChevronRight, BanIcon, Plus
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
@@ -82,16 +82,21 @@ function WhatsAppModal({ agendamento: ag, acao, onClose, onStatusChange }: WaMod
   const [msg, setMsg] = useState(defaultMsg);
   const novoStatus = acao === "confirmar" ? "confirmado" : "cancelado";
 
+  const [copiado, setCopiado] = useState(false);
+
   function handleSoStatus() {
     onStatusChange(ag.id, novoStatus);
     onClose();
   }
 
-  function handleWhatsApp() {
-    onStatusChange(ag.id, novoStatus);
-    window.open(buildWhatsAppUrl(ag.clienteTelefone, msg), "_blank");
-    onClose();
+  function handleCopiar() {
+    navigator.clipboard.writeText(msg).then(() => {
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    });
   }
+
+  const waUrl = buildWhatsAppUrl(ag.clienteTelefone, msg);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={onClose}>
@@ -102,7 +107,7 @@ function WhatsAppModal({ agendamento: ag, acao, onClose, onStatusChange }: WaMod
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="font-display font-bold text-lg text-foreground">
-              {acao === "confirmar" ? "✅ Confirmar agendamento" : "❌ Recusar agendamento"}
+              {acao === "confirmar" ? "Confirmar agendamento" : "Recusar agendamento"}
             </h2>
             <p className="text-sm text-muted-foreground mt-0.5">
               {ag.clienteNome} — {ag.clienteTelefone}
@@ -124,17 +129,29 @@ function WhatsAppModal({ agendamento: ag, acao, onClose, onStatusChange }: WaMod
             rows={5}
             className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm outline-none focus:border-primary resize-none"
           />
-          <p className="text-xs text-muted-foreground">Edite a mensagem antes de enviar, se quiser.</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Edite a mensagem antes de enviar, se quiser.</p>
+            <button
+              onClick={handleCopiar}
+              className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors"
+            >
+              <Copy className="w-3 h-3" />
+              {copiado ? "Copiado!" : "Copiar texto"}
+            </button>
+          </div>
         </div>
 
         <div className="flex flex-col gap-2 pt-1">
-          <button
-            onClick={handleWhatsApp}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors"
+          <a
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => { onStatusChange(ag.id, novoStatus); onClose(); }}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-green-500 text-white font-semibold hover:bg-green-600 transition-colors text-center no-underline"
           >
             <MessageCircle className="w-4 h-4" />
             Enviar pelo WhatsApp
-          </button>
+          </a>
           <button
             onClick={handleSoStatus}
             className="w-full py-2.5 rounded-xl border border-border text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
