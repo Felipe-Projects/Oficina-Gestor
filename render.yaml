@@ -3,7 +3,7 @@ services:
     name: oficina-mecanica
     env: node
     plan: free
-    buildCommand: pnpm install && pnpm run build:production
+    buildCommand: pnpm install --frozen-lockfile && pnpm run build:production
     startCommand: pnpm start
     envVars:
       - key: NODE_ENV
