@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { criarBackupAutomatico } from "./routes/backup";
 
 const rawPort = process.env["PORT"];
 
@@ -22,4 +23,11 @@ app.listen(port, (err) => {
   }
 
   logger.info({ port }, "Server listening");
+
+  criarBackupAutomatico().catch(() => {});
+
+  setInterval(
+    () => criarBackupAutomatico().catch(() => {}),
+    6 * 60 * 60 * 1000,
+  );
 });

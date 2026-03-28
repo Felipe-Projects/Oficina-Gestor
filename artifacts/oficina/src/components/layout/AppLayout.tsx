@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { 
   LayoutDashboard, ClipboardList, Users, Car, 
-  Package, DollarSign, Wrench, Menu, X, Settings, Sun, Moon, CalendarClock
+  Package, DollarSign, Wrench, Menu, X, Settings, Sun, Moon, CalendarClock, HardDrive
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { href: "/estoque", label: "Estoque", icon: Package },
   { href: "/servicos", label: "Catálogo de Serviços", icon: Wrench },
   { href: "/financeiro", label: "Financeiro", icon: DollarSign },
+  { href: "/backup", label: "Backup", icon: HardDrive },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

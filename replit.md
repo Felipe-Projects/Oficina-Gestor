@@ -93,7 +93,32 @@ Generated React Query hooks and fetch client from the OpenAPI spec (e.g. `useHea
 
 ### `artifacts/oficina` (`@workspace/oficina`)
 
-React + Vite web application for auto repair shop management ("Gestão de Oficina Mecânica"). Served at `/`. Features: Dashboard, OS management, Clients, Vehicles, Inventory, Financial, Service Catalog, Maintenance alerts, Appointment scheduling system with public booking page at `/agendar`.
+React + Vite web application for auto repair shop management ("Gestão de Oficina Mecânica"). Served at `/`. Features: Dashboard, OS management, Clients, Vehicles, Inventory, Financial, Service Catalog, Maintenance alerts, Appointment scheduling system with public booking page at `/agendar`, and Backup/Restore system (`/backup`).
+
+## Backup System
+
+- `GET /api/backup/exportar` — Download all data as JSON file
+- `POST /api/backup/salvar` — Save a snapshot to the `backups` DB table (max 10 kept)
+- `GET /api/backup/historico` — List saved backups (without `dados` field)
+- `GET /api/backup/historico/:id/baixar` — Download a specific saved backup
+- `DELETE /api/backup/historico/:id` — Delete a saved backup
+- `POST /api/backup/importar` — Replace all data with the uploaded JSON backup
+- **Auto-backup**: On server startup and every 6 hours, checks if 7 days have passed since the last automatic backup. If so, creates one automatically (`criarBackupAutomatico()` in `routes/backup.ts`).
+
+## Render Deployment
+
+A `render.yaml` is configured at the root. To deploy:
+
+1. Push this repository to GitHub (or GitLab).
+2. Create a new Render account at [render.com](https://render.com).
+3. Go to **New → Blueprint** and connect your repository — Render will auto-detect `render.yaml`.
+4. Set the required environment variables:
+   - `DATABASE_URL` — your PostgreSQL connection string (Render PostgreSQL or external like Neon/Supabase)
+   - `SESSION_SECRET` — a random secret string
+5. Render will build and deploy the combined Express + React app. The Express server serves the React SPA in production (static files from `artifacts/oficina/dist/public/`).
+
+Build command: `pnpm install && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/oficina run build && pnpm --filter @workspace/api-server run build`
+Start command: `pnpm --filter @workspace/db run push && node artifacts/api-server/dist/index.mjs`
 
 ### `artifacts/oficina-mobile` (`@workspace/oficina-mobile`)
 

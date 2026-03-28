@@ -9,6 +9,7 @@ import financeiroRouter from "./financeiro";
 import dashboardRouter from "./dashboard";
 import manutencaoRouter from "./manutencao";
 import agendamentosRouter from "./agendamentos";
+import backupRouter from "./backup";
 
 const router: IRouter = Router();
 
@@ -22,5 +23,6 @@ router.use("/financeiro", financeiroRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/manutencao", manutencaoRouter);
 router.use("/agendamentos", agendamentosRouter);
+router.use("/backup", backupRouter);
 
 export default router;

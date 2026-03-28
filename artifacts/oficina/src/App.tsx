@@ -16,6 +16,7 @@ import Financeiro from "@/pages/financeiro";
 import Servicos from "@/pages/servicos";
 import Agendamentos from "@/pages/agendamentos";
 import Agendar from "@/pages/agendar";
+import Backup from "@/pages/backup";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -45,6 +46,7 @@ function Router() {
             <Route path="/financeiro" component={Financeiro} />
             <Route path="/servicos" component={Servicos} />
             <Route path="/agendamentos" component={Agendamentos} />
+            <Route path="/backup" component={Backup} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>
