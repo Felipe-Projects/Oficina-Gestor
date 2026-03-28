@@ -3,9 +3,10 @@ import { Link, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { 
   LayoutDashboard, ClipboardList, Users, Car, 
-  Package, DollarSign, Wrench, Menu, X, Settings
+  Package, DollarSign, Wrench, Menu, X, Settings, Sun, Moon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -20,6 +21,7 @@ const NAV_ITEMS = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { theme, toggle } = useTheme();
 
   const isActive = (href: string) => {
     if (href === "/" && location === "/") return true;
@@ -33,11 +35,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border z-30">
         <div className="flex items-center gap-2">
           <img src={`${import.meta.env.BASE_URL}images/logo-icon.png`} alt="Logo" className="w-8 h-8 rounded-lg" />
-          <span className="font-display font-bold text-lg text-foreground">AutoSys</span>
+          <span className="font-display font-bold text-lg text-foreground">Oficina Pro</span>
         </div>
-        <button onClick={() => setIsMobileOpen(!isMobileOpen)} className="p-2 text-foreground">
-          {isMobileOpen ? <X /> : <Menu />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggle}
+            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+          >
+            {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+          </button>
+          <button onClick={() => setIsMobileOpen(!isMobileOpen)} className="p-2 text-foreground">
+            {isMobileOpen ? <X /> : <Menu />}
+          </button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -71,7 +82,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border/50">
+        <div className="p-4 border-t border-border/50 space-y-1">
+          <button
+            onClick={toggle}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group"
+          >
+            <div className="relative w-5 h-5">
+              <Sun className={cn(
+                "w-5 h-5 absolute inset-0 transition-all duration-300",
+                theme === "dark" ? "opacity-100 rotate-0" : "opacity-0 rotate-90"
+              )} />
+              <Moon className={cn(
+                "w-5 h-5 absolute inset-0 transition-all duration-300",
+                theme === "dark" ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"
+              )} />
+            </div>
+            <span className="font-medium">
+              {theme === "dark" ? "Modo Claro" : "Modo Escuro"}
+            </span>
+            <div className={cn(
+              "ml-auto w-10 h-5 rounded-full transition-colors duration-300 relative",
+              theme === "dark" ? "bg-primary" : "bg-muted-foreground/30"
+            )}>
+              <div className={cn(
+                "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all duration-300",
+                theme === "dark" ? "left-[calc(100%-1.125rem)]" : "left-0.5"
+              )} />
+            </div>
+          </button>
+
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground transition-colors cursor-pointer">
             <Settings className="w-5 h-5" />
             <span className="font-medium">Configurações</span>
