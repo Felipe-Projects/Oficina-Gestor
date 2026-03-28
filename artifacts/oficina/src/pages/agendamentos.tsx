@@ -31,7 +31,6 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   pendente: { label: "Pendente", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
   confirmado: { label: "Confirmado", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
   cancelado: { label: "Cancelado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
-  concluido: { label: "Concluído", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" },
 };
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -452,7 +451,6 @@ export default function Agendamentos() {
                 { key: "todos", label: "Todos" },
                 { key: "pendente", label: "Pendentes" },
                 { key: "confirmado", label: "Confirmados" },
-                { key: "concluido", label: "Concluídos" },
                 { key: "cancelado", label: "Cancelados" },
               ].map(f => (
                 <button
@@ -534,15 +532,6 @@ export default function Agendamentos() {
                                 <X className="w-3.5 h-3.5" /> Recusar
                               </button>
                             </>
-                          )}
-                          {ag.status === "confirmado" && (
-                            <button
-                              onClick={() => updateMutation.mutate({ id: ag.id, status: "concluido" })}
-                              disabled={updateMutation.isPending}
-                              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-lg text-xs font-semibold hover:bg-blue-200 transition-colors"
-                            >
-                              <Check className="w-3.5 h-3.5" /> Marcar concluído
-                            </button>
                           )}
                           <button
                             onClick={() => { if (confirm("Excluir agendamento?")) deleteMutation.mutate(ag.id); }}
