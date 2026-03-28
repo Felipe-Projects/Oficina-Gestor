@@ -5,9 +5,19 @@ import {
   useListClientes, useListVeiculos, useListServicos, useListPecas 
 } from "@workspace/api-client-react";
 import { formatCurrency, cn } from "@/lib/utils";
-import { ArrowLeft, Save, Trash2, PlusCircle, FileDown, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, Save, Trash2, PlusCircle, FileDown, ChevronDown, ChevronUp, CalendarClock, Wrench, Plus } from "lucide-react";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { gerarOrcamentoPdf } from "@/lib/gerarOrcamentoPdf";
+import { apiRequest } from "@/lib/queryClient";
+
+interface ManutencaoOSItem {
+  id?: number;
+  nome: string;
+  ultimaTroca: string;
+  proximaTrocaData: string;
+  proximaTrocaKm: string;
+  tempId: number;
+}
 
 interface PecaItem {
   pecaId: number;
@@ -49,8 +59,15 @@ export default function OrdemForm() {
 
   const [servicos, setServicos] = useState<{servicoId: number, valor: number, tempId: number}[]>([]);
   const [pecas, setPecas] = useState<PecaItem[]>([]);
+  const [manutencaoItems, setManutencaoItems] = useState<ManutencaoOSItem[]>([]);
+  const [showManutencao, setShowManutencao] = useState(false);
 
   const { data: veiculos } = useListVeiculos({ clienteId: clienteId as number }, { query: { enabled: !!clienteId } });
+  const { data: manutencaoExistente } = useQuery<ManutencaoOSItem[]>({
+    queryKey: ["/api/manutencao", veiculoId],
+    queryFn: () => apiRequest("GET", `/api/manutencao?veiculoId=${veiculoId}`),
+    enabled: !!veiculoId,
+  });
 
   useEffect(() => {
     if (existingOs) {
@@ -75,6 +92,20 @@ export default function OrdemForm() {
       })));
     }
   }, [existingOs]);
+
+  useEffect(() => {
+    if (manutencaoExistente && manutencaoExistente.length > 0) {
+      setManutencaoItems(manutencaoExistente.map((m: any) => ({
+        id: m.id,
+        nome: m.nome,
+        ultimaTroca: m.ultimaTroca ?? "",
+        proximaTrocaData: m.proximaTrocaData ?? "",
+        proximaTrocaKm: m.proximaTrocaKm != null ? String(m.proximaTrocaKm) : "",
+        tempId: Math.random(),
+      })));
+      setShowManutencao(true);
+    }
+  }, [manutencaoExistente]);
 
   const totalServicos = servicos.reduce((acc, s) => acc + s.valor, 0);
   const totalPecas = pecas.reduce((acc, p) => acc + (p.quantidade * p.valorUnitario), 0);
@@ -141,12 +172,50 @@ export default function OrdemForm() {
       } else {
         await updateMutation.mutateAsync({ id: osId as number, data: payload });
       }
+
+      for (const item of manutencaoItems) {
+        if (!item.nome.trim()) continue;
+        const mData = {
+          nome: item.nome,
+          ultimaTroca: item.ultimaTroca || null,
+          proximaTrocaData: item.proximaTrocaData || null,
+          proximaTrocaKm: item.proximaTrocaKm ? parseInt(item.proximaTrocaKm) : null,
+        };
+        if (item.id) {
+          await apiRequest("PUT", `/api/manutencao/${item.id}`, mData);
+        } else {
+          await apiRequest("POST", `/api/manutencao`, { ...mData, veiculoId: Number(veiculoId) });
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ["/api/ordens"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/manutencao"] });
       setLocation("/ordens");
     } catch (err) {
       console.error(err);
       alert("Erro ao salvar ordem de serviço");
     }
+  };
+
+  const updateManutencao = (idx: number, fields: Partial<ManutencaoOSItem>) => {
+    setManutencaoItems(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], ...fields };
+      return next;
+    });
+  };
+
+  const addManutencaoItem = () => {
+    setManutencaoItems(prev => [...prev, {
+      nome: "",
+      ultimaTroca: new Date().toISOString().split("T")[0],
+      proximaTrocaData: "",
+      proximaTrocaKm: "",
+      tempId: Math.random(),
+    }]);
+  };
+
+  const removeManutencaoItem = (idx: number) => {
+    setManutencaoItems(prev => prev.filter((_, i) => i !== idx));
   };
 
   const updatePeca = (idx: number, fields: Partial<PecaItem>) => {
@@ -428,6 +497,92 @@ export default function OrdemForm() {
             </div>
           </div>
         </div>
+
+        {/* Controle de Manutenção */}
+        {veiculoId && (
+          <div className="bg-card rounded-2xl border border-border/50 shadow-sm overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowManutencao(v => !v)}
+              className="w-full flex items-center justify-between p-6 text-left hover:bg-muted/40 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-xl text-primary"><Wrench className="w-5 h-5" /></div>
+                <div>
+                  <h2 className="text-lg font-display font-semibold">Controle de Manutenção</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Registre última e próxima troca de correia, óleo, filtros, etc.
+                    {manutencaoItems.length > 0 && ` • ${manutencaoItems.length} item(ns) registrado(s)`}
+                  </p>
+                </div>
+              </div>
+              {showManutencao ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+            </button>
+
+            {showManutencao && (
+              <div className="px-6 pb-6 space-y-3 border-t border-border/50 pt-4">
+                {manutencaoItems.map((item, idx) => (
+                  <div key={item.tempId} className="bg-background rounded-xl border border-border/50 p-3 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Ex: Óleo do motor, Correia dentada, Filtro de ar..."
+                        value={item.nome}
+                        onChange={e => updateManutencao(idx, { nome: e.target.value })}
+                        className="flex-1 px-3 py-2 bg-muted rounded-lg outline-none text-sm focus:ring-2 focus:ring-primary/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeManutencaoItem(idx)}
+                        className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Última troca</label>
+                        <input
+                          type="date"
+                          value={item.ultimaTroca}
+                          onChange={e => updateManutencao(idx, { ultimaTroca: e.target.value })}
+                          className="w-full px-2 py-1.5 bg-muted rounded-lg outline-none text-xs focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Próx. data</label>
+                        <input
+                          type="date"
+                          value={item.proximaTrocaData}
+                          onChange={e => updateManutencao(idx, { proximaTrocaData: e.target.value })}
+                          className="w-full px-2 py-1.5 bg-muted rounded-lg outline-none text-xs focus:ring-2 focus:ring-primary/20"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">Próx. KM</label>
+                        <input
+                          type="number"
+                          placeholder="Ex: 85000"
+                          value={item.proximaTrocaKm}
+                          onChange={e => updateManutencao(idx, { proximaTrocaKm: e.target.value })}
+                          className="w-full px-2 py-1.5 bg-muted rounded-lg outline-none text-xs focus:ring-2 focus:ring-primary/20"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addManutencaoItem}
+                  className="w-full py-2.5 rounded-xl border border-dashed border-border hover:border-primary hover:text-primary text-muted-foreground text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Adicionar item de manutenção
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Observações */}
         <div className="bg-card p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">

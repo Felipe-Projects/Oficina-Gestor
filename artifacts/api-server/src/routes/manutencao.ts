@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { manutencaoVeiculoTable } from "@workspace/db/schema";
-import { eq } from "drizzle-orm";
+import { manutencaoVeiculoTable, veiculosTable, clientesTable } from "@workspace/db/schema";
+import { eq, and, isNotNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
 const router = Router();
@@ -19,6 +19,40 @@ const updateManutencaoSchema = z.object({
   ultimaTroca: z.string().optional().nullable(),
   proximaTrocaData: z.string().optional().nullable(),
   proximaTrocaKm: z.number().int().optional().nullable(),
+});
+
+// GET /api/manutencao/alertas — itens com próxima troca nos próximos 3 meses
+router.get("/alertas", async (_req, res) => {
+  const threeMonthsLater = new Date();
+  threeMonthsLater.setMonth(threeMonthsLater.getMonth() + 3);
+  const limitDate = threeMonthsLater.toISOString().split("T")[0];
+
+  const items = await db
+    .select({
+      id: manutencaoVeiculoTable.id,
+      veiculoId: manutencaoVeiculoTable.veiculoId,
+      nome: manutencaoVeiculoTable.nome,
+      ultimaTroca: manutencaoVeiculoTable.ultimaTroca,
+      proximaTrocaData: manutencaoVeiculoTable.proximaTrocaData,
+      proximaTrocaKm: manutencaoVeiculoTable.proximaTrocaKm,
+      veiculoModelo: veiculosTable.modelo,
+      veiculoMarca: veiculosTable.marca,
+      veiculoPlaca: veiculosTable.placa,
+      clienteId: veiculosTable.clienteId,
+      clienteNome: clientesTable.nome,
+    })
+    .from(manutencaoVeiculoTable)
+    .innerJoin(veiculosTable, eq(manutencaoVeiculoTable.veiculoId, veiculosTable.id))
+    .innerJoin(clientesTable, eq(veiculosTable.clienteId, clientesTable.id))
+    .where(
+      and(
+        isNotNull(manutencaoVeiculoTable.proximaTrocaData),
+        lte(manutencaoVeiculoTable.proximaTrocaData, limitDate),
+      )
+    )
+    .orderBy(manutencaoVeiculoTable.proximaTrocaData);
+
+  res.json(items);
 });
 
 // GET /api/manutencao?veiculoId=X

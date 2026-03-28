@@ -1,9 +1,30 @@
 import React from "react";
 import { useGetDashboard } from "@workspace/api-client-react";
 import { Link } from "wouter";
-import { ArrowRight, Clock, CheckCircle2, AlertTriangle, TrendingUp, PackageX, Car, ClipboardList, Plus } from "lucide-react";
+import { ArrowRight, Clock, CheckCircle2, AlertTriangle, TrendingUp, Car, ClipboardList, Plus, CalendarClock, Wrench } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+interface Alerta {
+  id: number;
+  nome: string;
+  proximaTrocaData: string;
+  proximaTrocaKm: number | null;
+  veiculoMarca: string;
+  veiculoModelo: string;
+  veiculoPlaca: string;
+  clienteNome: string;
+  clienteId: number;
+}
+
+function diasAte(dateStr: string): number {
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const alvo = new Date(dateStr + "T00:00:00");
+  return Math.round((alvo.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 function StatCard({ title, value, subtitle, icon: Icon, colorClass, delay }: any) {
   return (
@@ -30,6 +51,11 @@ function StatCard({ title, value, subtitle, icon: Icon, colorClass, delay }: any
 
 export default function Dashboard() {
   const { data: dashboard, isLoading } = useGetDashboard();
+  const { data: alertas } = useQuery<Alerta[]>({
+    queryKey: ["/api/manutencao/alertas"],
+    queryFn: () => apiRequest("GET", "/api/manutencao/alertas"),
+    refetchInterval: 60_000,
+  });
 
   if (isLoading) {
     return (
@@ -82,6 +108,83 @@ export default function Dashboard() {
           delay={0.2}
         />
       </div>
+
+      {/* Alertas de Manutenção */}
+      {alertas && alertas.length > 0 && (
+        <div>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-amber-500/10 rounded-xl text-amber-600 dark:text-amber-400"><CalendarClock className="w-5 h-5" /></div>
+            <div>
+              <h2 className="text-xl font-display font-semibold text-foreground">Alertas de Manutenção</h2>
+              <p className="text-xs text-muted-foreground">Clientes com manutenção prevista nos próximos 3 meses</p>
+            </div>
+            <span className="ml-auto text-xs font-bold bg-amber-500/15 text-amber-700 dark:text-amber-400 px-2.5 py-1 rounded-full">{alertas.length} alerta{alertas.length !== 1 ? "s" : ""}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {alertas.map(a => {
+              const dias = diasAte(a.proximaTrocaData);
+              const isUrgente = dias <= 30;
+              const isProximo = dias <= 60;
+              return (
+                <motion.div
+                  key={a.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={cn(
+                    "bg-card rounded-xl border p-4 space-y-2 shadow-sm",
+                    isUrgente ? "border-red-300 dark:border-red-800/70" :
+                    isProximo ? "border-amber-300 dark:border-amber-800/70" :
+                    "border-border/50"
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={cn(
+                        "p-1.5 rounded-lg shrink-0",
+                        isUrgente ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400" :
+                        isProximo ? "bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400" :
+                        "bg-primary/10 text-primary"
+                      )}>
+                        <Wrench className="w-3.5 h-3.5" />
+                      </div>
+                      <span className="font-semibold text-sm text-foreground truncate">{a.nome}</span>
+                    </div>
+                    <span className={cn(
+                      "shrink-0 text-xs font-bold px-2 py-0.5 rounded-full",
+                      isUrgente ? "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400" :
+                      isProximo ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400" :
+                      "bg-muted text-muted-foreground"
+                    )}>
+                      {dias < 0 ? "Vencido" : dias === 0 ? "Hoje" : `${dias}d`}
+                    </span>
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-0.5 pl-1">
+                    <p className="font-medium text-foreground">{a.clienteNome}</p>
+                    <p>{a.veiculoMarca} {a.veiculoModelo} — <span className="font-mono">{a.veiculoPlaca.toUpperCase()}</span></p>
+                    <div className="flex items-center gap-3 pt-1">
+                      <span className="flex items-center gap-1">
+                        <CalendarClock className="w-3 h-3" />
+                        {new Date(a.proximaTrocaData + "T00:00:00").toLocaleDateString("pt-BR")}
+                      </span>
+                      {a.proximaTrocaKm && (
+                        <span className="flex items-center gap-1">
+                          <Car className="w-3 h-3" />
+                          {a.proximaTrocaKm.toLocaleString("pt-BR")} km
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <Link href={`/clientes/${a.clienteId}`}>
+                    <span className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1 pt-1">
+                      Ver cliente <ArrowRight className="w-3 h-3" />
+                    </span>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div>
         <div className="flex items-center justify-between mb-6">
