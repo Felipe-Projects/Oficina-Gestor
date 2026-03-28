@@ -23,6 +23,8 @@ const addPecaSchema = z.object({
   pecaId: z.number().int(),
   quantidade: z.number().int().positive(),
   valorUnitario: z.number(),
+  proximaTrocaData: z.string().optional().nullable(),
+  proximaTrocaKm: z.number().int().optional().nullable(),
 });
 
 const createOrdemSchema = z.object({
@@ -117,6 +119,8 @@ async function buildOrdemDetalhada(ordemId: number) {
       codigo: pecasTable.codigo,
       quantidade: ordensPecasTable.quantidade,
       valorUnitario: ordensPecasTable.valorUnitario,
+      proximaTrocaData: ordensPecasTable.proximaTrocaData,
+      proximaTrocaKm: ordensPecasTable.proximaTrocaKm,
     })
     .from(ordensPecasTable)
     .leftJoin(pecasTable, eq(ordensPecasTable.pecaId, pecasTable.id))
@@ -365,6 +369,8 @@ router.post("/", async (req, res) => {
         pecaId: p.pecaId,
         quantidade: p.quantidade,
         valorUnitario: String(p.valorUnitario),
+        proximaTrocaData: p.proximaTrocaData ?? null,
+        proximaTrocaKm: p.proximaTrocaKm ?? null,
       }))
     );
     // reduce stock for parts
@@ -442,6 +448,8 @@ router.put("/:id", async (req, res) => {
           pecaId: p.pecaId,
           quantidade: p.quantidade,
           valorUnitario: String(p.valorUnitario),
+          proximaTrocaData: p.proximaTrocaData ?? null,
+          proximaTrocaKm: p.proximaTrocaKm ?? null,
         }))
       );
       for (const p of pecas) {

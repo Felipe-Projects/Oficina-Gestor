@@ -5,9 +5,19 @@ import {
   useListClientes, useListVeiculos, useListServicos, useListPecas 
 } from "@workspace/api-client-react";
 import { formatCurrency, cn } from "@/lib/utils";
-import { ArrowLeft, Save, Trash2, PlusCircle, FileDown } from "lucide-react";
+import { ArrowLeft, Save, Trash2, PlusCircle, FileDown, ChevronDown, ChevronUp, CalendarClock } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { gerarOrcamentoPdf } from "@/lib/gerarOrcamentoPdf";
+
+interface PecaItem {
+  pecaId: number;
+  quantidade: number;
+  valorUnitario: number;
+  tempId: number;
+  proximaTrocaData?: string | null;
+  proximaTrocaKm?: number | null;
+  showTroca?: boolean;
+}
 
 export default function OrdemForm() {
   const [match, params] = useRoute("/ordens/:id");
@@ -25,7 +35,6 @@ export default function OrdemForm() {
   const createMutation = useCreateOrdem();
   const updateMutation = useUpdateOrdem();
 
-  // Form State
   const [clienteId, setClienteId] = useState<number | "">("");
   const [veiculoId, setVeiculoId] = useState<number | "">("");
   const [responsavel, setResponsavel] = useState("");
@@ -34,16 +43,13 @@ export default function OrdemForm() {
   const [dataPrevisao, setDataPrevisao] = useState("");
   const [observacoes, setObservacoes] = useState("");
   
-  // Checklist State
   const [checklist, setChecklist] = useState<Record<string, any>>({
     riscos: false, vidrosOk: true, parabrisasOk: true, rodasOk: true, tapetes: true, combustivel: "1/2", interior: "bom"
   });
 
-  // Items State
   const [servicos, setServicos] = useState<{servicoId: number, valor: number, tempId: number}[]>([]);
-  const [pecas, setPecas] = useState<{pecaId: number, quantidade: number, valorUnitario: number, tempId: number}[]>([]);
+  const [pecas, setPecas] = useState<PecaItem[]>([]);
 
-  // Fetch Veiculos dynamically
   const { data: veiculos } = useListVeiculos({ clienteId: clienteId as number }, { query: { enabled: !!clienteId } });
 
   useEffect(() => {
@@ -57,8 +63,16 @@ export default function OrdemForm() {
       setObservacoes(existingOs.observacoes || "");
       if (existingOs.checklistEntrada) setChecklist(existingOs.checklistEntrada);
       
-      setServicos(existingOs.servicos.map(s => ({ servicoId: s.servicoId, valor: s.valor, tempId: Math.random() })));
-      setPecas(existingOs.pecas.map(p => ({ pecaId: p.pecaId, quantidade: p.quantidade, valorUnitario: p.valorUnitario, tempId: Math.random() })));
+      setServicos(existingOs.servicos.map((s: any) => ({ servicoId: s.servicoId, valor: s.valor, tempId: Math.random() })));
+      setPecas(existingOs.pecas.map((p: any) => ({
+        pecaId: p.pecaId,
+        quantidade: p.quantidade,
+        valorUnitario: p.valorUnitario,
+        tempId: Math.random(),
+        proximaTrocaData: p.proximaTrocaData ?? null,
+        proximaTrocaKm: p.proximaTrocaKm ?? null,
+        showTroca: !!(p.proximaTrocaData || p.proximaTrocaKm),
+      })));
     }
   }, [existingOs]);
 
@@ -112,7 +126,13 @@ export default function OrdemForm() {
       observacoes,
       checklistEntrada: checklist,
       servicos: servicos.map(s => ({ servicoId: s.servicoId, valor: s.valor })),
-      pecas: pecas.map(p => ({ pecaId: p.pecaId, quantidade: p.quantidade, valorUnitario: p.valorUnitario }))
+      pecas: pecas.map(p => ({
+        pecaId: p.pecaId,
+        quantidade: p.quantidade,
+        valorUnitario: p.valorUnitario,
+        proximaTrocaData: p.proximaTrocaData || null,
+        proximaTrocaKm: p.proximaTrocaKm || null,
+      }))
     };
 
     try {
@@ -127,6 +147,14 @@ export default function OrdemForm() {
       console.error(err);
       alert("Erro ao salvar ordem de serviço");
     }
+  };
+
+  const updatePeca = (idx: number, fields: Partial<PecaItem>) => {
+    setPecas(prev => {
+      const next = [...prev];
+      next[idx] = { ...next[idx], ...fields };
+      return next;
+    });
   };
 
   if (!isNew && isLoadingOs) return <div className="p-8 text-center">Carregando...</div>;
@@ -210,10 +238,10 @@ export default function OrdemForm() {
                 onChange={e => setStatus(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none font-semibold"
               >
-                <option value="orcamento">📝 Orçamento</option>
-                <option value="em_andamento">⚙️ Em Andamento</option>
-                <option value="finalizado">✅ Finalizado</option>
-                <option value="entregue">🚗 Entregue</option>
+                <option value="orcamento">Orçamento</option>
+                <option value="em_andamento">Em Andamento</option>
+                <option value="finalizado">Finalizado</option>
+                <option value="entregue">Entregue</option>
               </select>
             </div>
 
@@ -303,7 +331,7 @@ export default function OrdemForm() {
               <h2 className="text-lg font-display font-semibold">Peças (Estoque)</h2>
               <button 
                 type="button" 
-                onClick={() => setPecas([...pecas, { pecaId: pecasCat?.[0]?.id || 0, quantidade: 1, valorUnitario: pecasCat?.[0]?.valorVenda || 0, tempId: Math.random() }])}
+                onClick={() => setPecas([...pecas, { pecaId: pecasCat?.[0]?.id || 0, quantidade: 1, valorUnitario: pecasCat?.[0]?.valorVenda || 0, tempId: Math.random(), showTroca: false }])}
                 className="text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
               >
                 <PlusCircle className="w-4 h-4" /> Add
@@ -312,47 +340,84 @@ export default function OrdemForm() {
             
             <div className="flex-1 space-y-3">
               {pecas.map((p, idx) => (
-                <div key={p.tempId} className="flex gap-2 items-center bg-background p-2 rounded-xl border border-border/50">
-                  <select 
-                    value={p.pecaId}
-                    onChange={e => {
-                      const newId = Number(e.target.value);
-                      const catInfo = pecasCat?.find(c => c.id === newId);
-                      const newP = [...pecas];
-                      newP[idx].pecaId = newId;
-                      if (catInfo) newP[idx].valorUnitario = catInfo.valorVenda;
-                      setPecas(newP);
-                    }}
-                    className="flex-1 px-3 py-2 bg-transparent outline-none text-sm"
-                  >
-                    <option value={0} disabled>Selecione...</option>
-                    {pecasCat?.map(cat => <option key={cat.id} value={cat.id}>{cat.nome} (Estoque: {cat.quantidade})</option>)}
-                  </select>
-                  <input 
-                    type="number" 
-                    value={p.quantidade}
-                    onChange={e => {
-                      const newP = [...pecas];
-                      newP[idx].quantidade = Number(e.target.value);
-                      setPecas(newP);
-                    }}
-                    className="w-16 px-3 py-2 bg-muted rounded-lg outline-none text-sm text-center"
-                    min="1" title="Qtd"
-                  />
-                  <input 
-                    type="number" 
-                    value={p.valorUnitario}
-                    onChange={e => {
-                      const newP = [...pecas];
-                      newP[idx].valorUnitario = Number(e.target.value);
-                      setPecas(newP);
-                    }}
-                    className="w-24 px-3 py-2 bg-muted rounded-lg outline-none text-sm font-medium"
-                    step="0.01" min="0" title="Valor Unitário"
-                  />
-                  <button type="button" onClick={() => setPecas(pecas.filter(x => x.tempId !== p.tempId))} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div key={p.tempId} className="bg-background rounded-xl border border-border/50 overflow-hidden">
+                  {/* Linha principal */}
+                  <div className="flex gap-2 items-center p-2">
+                    <select 
+                      value={p.pecaId}
+                      onChange={e => {
+                        const newId = Number(e.target.value);
+                        const catInfo = pecasCat?.find(c => c.id === newId);
+                        updatePeca(idx, { pecaId: newId, ...(catInfo ? { valorUnitario: catInfo.valorVenda } : {}) });
+                      }}
+                      className="flex-1 px-3 py-2 bg-transparent outline-none text-sm"
+                    >
+                      <option value={0} disabled>Selecione...</option>
+                      {pecasCat?.map(cat => <option key={cat.id} value={cat.id}>{cat.nome} (Estoque: {cat.quantidade})</option>)}
+                    </select>
+                    <input 
+                      type="number" 
+                      value={p.quantidade}
+                      onChange={e => updatePeca(idx, { quantidade: Number(e.target.value) })}
+                      className="w-16 px-3 py-2 bg-muted rounded-lg outline-none text-sm text-center"
+                      min="1" title="Qtd"
+                    />
+                    <input 
+                      type="number" 
+                      value={p.valorUnitario}
+                      onChange={e => updatePeca(idx, { valorUnitario: Number(e.target.value) })}
+                      className="w-24 px-3 py-2 bg-muted rounded-lg outline-none text-sm font-medium"
+                      step="0.01" min="0" title="Valor Unitário"
+                    />
+                    <button
+                      type="button"
+                      title="Próxima troca"
+                      onClick={() => updatePeca(idx, { showTroca: !p.showTroca })}
+                      className={cn(
+                        "p-2 rounded-lg transition-colors",
+                        p.showTroca
+                          ? "text-primary bg-primary/10"
+                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      )}
+                    >
+                      <CalendarClock className="w-4 h-4" />
+                    </button>
+                    <button type="button" onClick={() => setPecas(pecas.filter(x => x.tempId !== p.tempId))} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  {/* Seção Próxima Troca */}
+                  {p.showTroca && (
+                    <div className="px-3 pb-3 pt-1 border-t border-border/40 bg-primary/5">
+                      <p className="text-xs font-semibold text-primary mb-2 flex items-center gap-1">
+                        <CalendarClock className="w-3.5 h-3.5" />
+                        Próxima Troca
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Data prevista</label>
+                          <input
+                            type="date"
+                            value={p.proximaTrocaData ?? ""}
+                            onChange={e => updatePeca(idx, { proximaTrocaData: e.target.value || null })}
+                            className="w-full px-2 py-1.5 rounded-lg bg-background border border-border outline-none text-xs focus:border-primary"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-xs text-muted-foreground">Quilometragem (km)</label>
+                          <input
+                            type="number"
+                            value={p.proximaTrocaKm ?? ""}
+                            onChange={e => updatePeca(idx, { proximaTrocaKm: e.target.value ? Number(e.target.value) : null })}
+                            placeholder="Ex: 85000"
+                            className="w-full px-2 py-1.5 rounded-lg bg-background border border-border outline-none text-xs focus:border-primary"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
               {pecas.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">Nenhuma peça adicionada.</p>}
@@ -362,6 +427,18 @@ export default function OrdemForm() {
               <span className="text-lg">{formatCurrency(totalPecas)}</span>
             </div>
           </div>
+        </div>
+
+        {/* Observações */}
+        <div className="bg-card p-6 md:p-8 rounded-2xl border border-border/50 shadow-sm">
+          <h2 className="text-lg font-display font-semibold border-b border-border/50 pb-4 mb-4">Observações</h2>
+          <textarea
+            value={observacoes}
+            onChange={e => setObservacoes(e.target.value)}
+            rows={3}
+            placeholder="Observações adicionais sobre a OS..."
+            className="w-full px-4 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none resize-none text-sm"
+          />
         </div>
 
         {/* Footer Actions */}
