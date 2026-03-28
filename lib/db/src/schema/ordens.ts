@@ -37,6 +37,8 @@ export const ordensPecasTable = pgTable("ordens_pecas", {
   pecaId: integer("peca_id").notNull().references(() => pecasTable.id),
   quantidade: integer("quantidade").notNull(),
   valorUnitario: numeric("valor_unitario", { precision: 10, scale: 2 }).notNull(),
+  proximaTrocaData: text("proxima_troca_data"),
+  proximaTrocaKm: integer("proxima_troca_km"),
 });
 
 export const insertOrdemSchema = createInsertSchema(ordensTable).omit({ id: true, createdAt: true, numero: true });
