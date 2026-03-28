@@ -45,19 +45,27 @@ function formatPhone(phone: string) {
   return phone.replace(/\D/g, "");
 }
 
+const EMOJI = {
+  check:  String.fromCodePoint(0x2705), // ✅
+  x:      String.fromCodePoint(0x274C), // ❌
+  wrench: String.fromCodePoint(0x1F527), // 🔧
+  clock:  String.fromCodePoint(0x23F0), // ⏰
+};
+
 function buildWhatsAppUrl(phone: string, message: string) {
   const cleaned = formatPhone(phone);
   const full = cleaned.startsWith("55") ? cleaned : `55${cleaned}`;
+  // encodeURIComponent garante UTF-8 correto para todos os caracteres Unicode
   return `https://wa.me/${full}?text=${encodeURIComponent(message)}`;
 }
 
 function buildConfirmMsg(ag: Agendamento) {
   const servico = ag.servicoNome ? `para ${ag.servicoNome}` : "";
-  return `Olá, ${ag.clienteNome}! Seu agendamento ${servico} para o dia ${formatDate(ag.dataAgendamento)} às ${ag.horario} foi ✅ CONFIRMADO. Aguardamos você na oficina!`;
+  return `Ol\u00E1, ${ag.clienteNome}! Seu agendamento ${servico} para o dia ${formatDate(ag.dataAgendamento)} \u00E0s ${ag.horario} foi ${EMOJI.check} CONFIRMADO. Aguardamos voc\u00EA na oficina! ${EMOJI.wrench}`;
 }
 
 function buildRecusaMsg(ag: Agendamento) {
-  return `Olá, ${ag.clienteNome}! Infelizmente não conseguimos atender seu agendamento para o dia ${formatDate(ag.dataAgendamento)}. Entre em contato para encontrarmos um horário disponível. Pedimos desculpas pelo inconveniente.`;
+  return `Ol\u00E1, ${ag.clienteNome}! ${EMOJI.x} Infelizmente n\u00E3o conseguimos atender seu agendamento para o dia ${formatDate(ag.dataAgendamento)}. Entre em contato para encontrarmos um hor\u00E1rio dispon\u00EDvel. Pedimos desculpas pelo inconveniente.`;
 }
 
 // ─── WHATSAPP MODAL ─────────────────────────────────────────────────────────
