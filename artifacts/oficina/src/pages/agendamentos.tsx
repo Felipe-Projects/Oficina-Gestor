@@ -28,9 +28,9 @@ interface DiaBloqueado {
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  pendente: { label: "Pendente", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
-  confirmado: { label: "Confirmado", color: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
-  cancelado: { label: "Cancelado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+  pendente: { label: "Pendente", color: "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400" },
+  confirmado: { label: "Confirmado", color: "bg-green-100 text-green-900 dark:bg-green-900/30 dark:text-green-400" },
+  cancelado: { label: "Cancelado", color: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400" },
 };
 
 const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -433,7 +433,7 @@ export default function Agendamentos() {
               </a>
             </div>
             {pendentes > 0 && (
-              <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1 rounded-full font-semibold">
+              <span className="text-xs bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400 px-3 py-1 rounded-full font-semibold">
                 {pendentes} agendamento{pendentes !== 1 ? "s" : ""} aguardando confirmação
               </span>
             )}

@@ -96,10 +96,10 @@ export default function OrdensList() {
                     <td className="px-6 py-5">
                       <span className={cn(
                         "px-3 py-1.5 rounded-lg text-xs font-bold inline-flex items-center gap-1.5",
-                        os.status === 'orcamento' ? "bg-blue-100/50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800" :
-                        os.status === 'em_andamento' ? "bg-amber-100/50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800" :
-                        os.status === 'finalizado' ? "bg-emerald-100/50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800" :
-                        "bg-slate-100/50 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                        os.status === 'orcamento' ? "bg-blue-100 text-blue-900 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-800" :
+                        os.status === 'em_andamento' ? "bg-amber-100 text-amber-900 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800" :
+                        os.status === 'finalizado' ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800" :
+                        "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                       )}>
                         {os.status === 'orcamento' && <ClipboardList className="w-3.5 h-3.5" />}
                         {os.status === 'em_andamento' && <Clock className="w-3.5 h-3.5" />}
