@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "@workspace/db";
-import { agendamentosTable, ordensTable } from "@workspace/db/schema";
+import { agendamentosTable, ordensTable, diasBloqueadosTable } from "@workspace/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 
@@ -35,40 +35,66 @@ function dateRange(start: string, days: number): string[] {
   return result;
 }
 
+function toDateStr(val: Date | string): string {
+  return (val instanceof Date ? val.toISOString() : String(val)).split("T")[0];
+}
+
+// ─── DIAS BLOQUEADOS ────────────────────────────────────────────────────────
+
+// GET /api/agendamentos/dias-bloqueados
+router.get("/dias-bloqueados", async (_req, res) => {
+  const dias = await db.select().from(diasBloqueadosTable).orderBy(diasBloqueadosTable.data);
+  res.json(dias);
+});
+
+// POST /api/agendamentos/dias-bloqueados
+router.post("/dias-bloqueados", async (req, res) => {
+  const { data, motivo } = req.body;
+  if (!data) {
+    res.status(400).json({ error: "Campo 'data' obrigatório (YYYY-MM-DD)" });
+    return;
+  }
+  try {
+    const [criado] = await db.insert(diasBloqueadosTable).values({ data, motivo: motivo || null }).returning();
+    res.status(201).json(criado);
+  } catch {
+    res.status(409).json({ error: "Essa data já está bloqueada." });
+  }
+});
+
+// DELETE /api/agendamentos/dias-bloqueados/:id
+router.delete("/dias-bloqueados/:id", async (req, res) => {
+  const id = parseInt(req.params.id);
+  await db.delete(diasBloqueadosTable).where(eq(diasBloqueadosTable.id, id));
+  res.status(204).end();
+});
+
+// ─── DISPONIBILIDADE ────────────────────────────────────────────────────────
+
 // GET /api/agendamentos/disponibilidade?dataInicio=YYYY-MM-DD&dias=60
-// Returns for each date: occupancy count (0,1,2). 2 = unavailable.
 router.get("/disponibilidade", async (req, res) => {
   const dataInicio = (req.query.dataInicio as string) || new Date().toISOString().split("T")[0];
   const totalDias = parseInt((req.query.dias as string) || "60");
-
   const dataFim = addDays(dataInicio, totalDias);
 
-  // Get all active OS (orcamento + em_andamento) - filter in JS to avoid timestamp type issues
-  const ordensAtivas = await db
-    .select({
-      dataEntrada: ordensTable.dataEntrada,
-      dataPrevisao: ordensTable.dataPrevisao,
-    })
-    .from(ordensTable)
-    .where(inArray(ordensTable.status, ["orcamento", "em_andamento"]));
+  const [ordensAtivas, agendamentosAtivos, diasBloqueados] = await Promise.all([
+    db.select({ dataEntrada: ordensTable.dataEntrada, dataPrevisao: ordensTable.dataPrevisao })
+      .from(ordensTable)
+      .where(inArray(ordensTable.status, ["orcamento", "em_andamento"])),
+    db.select({ dataAgendamento: agendamentosTable.dataAgendamento, duracaoDias: agendamentosTable.duracaoDias })
+      .from(agendamentosTable)
+      .where(inArray(agendamentosTable.status, ["pendente", "confirmado"])),
+    db.select().from(diasBloqueadosTable),
+  ]);
 
-  // Get confirmed/pending appointments
-  const agendamentosAtivos = await db
-    .select({
-      dataAgendamento: agendamentosTable.dataAgendamento,
-      duracaoDias: agendamentosTable.duracaoDias,
-    })
-    .from(agendamentosTable)
-    .where(inArray(agendamentosTable.status, ["pendente", "confirmado"]));
+  const bloqueadosSet = new Set(diasBloqueados.map(d => d.data));
 
-  // Build occupancy map
   const occupancy: Record<string, number> = {};
 
   for (const os of ordensAtivas) {
     if (!os.dataPrevisao) continue;
-    const entrada = (os.dataEntrada instanceof Date ? os.dataEntrada.toISOString() : String(os.dataEntrada)).split("T")[0];
-    const previsao = (os.dataPrevisao instanceof Date ? os.dataPrevisao.toISOString() : String(os.dataPrevisao)).split("T")[0];
-    // Mark each day from entrada to previsao
+    const entrada = toDateStr(os.dataEntrada);
+    const previsao = toDateStr(os.dataPrevisao);
     let cur = entrada < dataInicio ? dataInicio : entrada;
     while (cur <= previsao && cur <= dataFim) {
       occupancy[cur] = (occupancy[cur] || 0) + 1;
@@ -77,38 +103,33 @@ router.get("/disponibilidade", async (req, res) => {
   }
 
   for (const ag of agendamentosAtivos) {
-    const dates = dateRange(ag.dataAgendamento, ag.duracaoDias);
-    for (const d of dates) {
+    for (const d of dateRange(ag.dataAgendamento, ag.duracaoDias)) {
       if (d >= dataInicio && d <= dataFim) {
         occupancy[d] = (occupancy[d] || 0) + 1;
       }
     }
   }
 
-  // Build result array
-  const result: Array<{ data: string; ocupacao: number; disponivel: boolean }> = [];
+  const result: Array<{ data: string; ocupacao: number; disponivel: boolean; bloqueado: boolean }> = [];
   for (let i = 0; i < totalDias; i++) {
     const d = addDays(dataInicio, i);
-    // Skip Sundays (0)
     const dow = new Date(d + "T12:00:00Z").getUTCDay();
-    if (dow === 0) continue;
+    if (dow === 0) continue; // skip Sundays
+    const bloqueado = bloqueadosSet.has(d);
     const occ = occupancy[d] || 0;
-    result.push({ data: d, ocupacao: occ, disponivel: occ < MAX_CARROS });
+    result.push({ data: d, ocupacao: occ, disponivel: !bloqueado && occ < MAX_CARROS, bloqueado });
   }
 
   res.json(result);
 });
 
-// GET /api/agendamentos — admin list
+// ─── AGENDAMENTOS ────────────────────────────────────────────────────────────
+
 router.get("/", async (_req, res) => {
-  const agendamentos = await db
-    .select()
-    .from(agendamentosTable)
-    .orderBy(agendamentosTable.dataAgendamento);
+  const agendamentos = await db.select().from(agendamentosTable).orderBy(agendamentosTable.dataAgendamento);
   res.json(agendamentos);
 });
 
-// POST /api/agendamentos — public create
 router.post("/", async (req, res) => {
   const parsed = agendamentoSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -116,31 +137,33 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  // Validate availability on requested date
   const { dataAgendamento, duracaoDias } = parsed.data;
   const dates = dateRange(dataAgendamento, duracaoDias);
 
-  const ordensAtivas = await db
-    .select({ dataEntrada: ordensTable.dataEntrada, dataPrevisao: ordensTable.dataPrevisao })
-    .from(ordensTable)
-    .where(inArray(ordensTable.status, ["orcamento", "em_andamento"]));
+  const [ordensAtivas, agendamentosAtivos, diasBloqueados] = await Promise.all([
+    db.select({ dataEntrada: ordensTable.dataEntrada, dataPrevisao: ordensTable.dataPrevisao })
+      .from(ordensTable).where(inArray(ordensTable.status, ["orcamento", "em_andamento"])),
+    db.select({ dataAgendamento: agendamentosTable.dataAgendamento, duracaoDias: agendamentosTable.duracaoDias })
+      .from(agendamentosTable).where(inArray(agendamentosTable.status, ["pendente", "confirmado"])),
+    db.select().from(diasBloqueadosTable),
+  ]);
 
-  const agendamentosAtivos = await db
-    .select({ dataAgendamento: agendamentosTable.dataAgendamento, duracaoDias: agendamentosTable.duracaoDias })
-    .from(agendamentosTable)
-    .where(inArray(agendamentosTable.status, ["pendente", "confirmado"]));
+  const bloqueadosSet = new Set(diasBloqueados.map(d => d.data));
 
   for (const d of dates) {
+    if (bloqueadosSet.has(d)) {
+      res.status(409).json({ error: `A data ${d} está bloqueada. A oficina não atende nesse dia.` });
+      return;
+    }
     let occ = 0;
     for (const os of ordensAtivas) {
       if (!os.dataPrevisao) continue;
-      const entrada = (os.dataEntrada instanceof Date ? os.dataEntrada.toISOString() : String(os.dataEntrada)).split("T")[0];
-      const previsao = (os.dataPrevisao instanceof Date ? os.dataPrevisao.toISOString() : String(os.dataPrevisao)).split("T")[0];
+      const entrada = toDateStr(os.dataEntrada);
+      const previsao = toDateStr(os.dataPrevisao);
       if (d >= entrada && d <= previsao) occ++;
     }
     for (const ag of agendamentosAtivos) {
-      const agDates = dateRange(ag.dataAgendamento, ag.duracaoDias);
-      if (agDates.includes(d)) occ++;
+      if (dateRange(ag.dataAgendamento, ag.duracaoDias).includes(d)) occ++;
     }
     if (occ >= MAX_CARROS) {
       res.status(409).json({ error: `Data ${d} já está com capacidade máxima.` });
@@ -152,7 +175,6 @@ router.post("/", async (req, res) => {
   res.status(201).json(criado);
 });
 
-// PUT /api/agendamentos/:id — update status (admin)
 router.put("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   const { status, observacoes } = req.body;
@@ -168,7 +190,6 @@ router.put("/:id", async (req, res) => {
   res.json(updated);
 });
 
-// DELETE /api/agendamentos/:id
 router.delete("/:id", async (req, res) => {
   const id = parseInt(req.params.id);
   await db.delete(agendamentosTable).where(eq(agendamentosTable.id, id));

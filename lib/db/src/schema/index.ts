@@ -6,3 +6,4 @@ export * from "./ordens";
 export * from "./financeiro";
 export * from "./manutencao";
 export * from "./agendamentos";
+export * from "./dias-bloqueados";

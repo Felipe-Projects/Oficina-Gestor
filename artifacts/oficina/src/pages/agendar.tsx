@@ -16,6 +16,7 @@ interface Disponibilidade {
   data: string;
   ocupacao: number;
   disponivel: boolean;
+  bloqueado: boolean;
 }
 
 const HORARIOS = ["08:00", "09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
@@ -267,18 +268,21 @@ export default function Agendar() {
                     const isDomingo = day.dayOfWeek === 0;
                     const disp = dispMap[day.date];
                     const available = disp?.disponivel ?? false;
-                    const ocupacao = disp?.ocupacao ?? 0;
+                    const bloqueado = disp?.bloqueado ?? false;
+                    const lotado = disp && !available && !bloqueado;
                     const isSelected = dataSelecionada === day.date;
-                    const disabled = isPast || isDomingo || !available;
+                    const disabled = isPast || isDomingo || bloqueado || !available;
 
                     return (
                       <button
                         key={day.date}
                         disabled={disabled}
                         onClick={() => { setDataSelecionada(day.date); setStep("horario"); }}
+                        title={bloqueado ? "Fechado" : lotado ? "Lotado" : undefined}
                         className={cn(
                           "aspect-square rounded-xl text-sm font-medium transition-all flex flex-col items-center justify-center",
                           isSelected ? "bg-primary text-primary-foreground shadow-md" :
+                          bloqueado ? "bg-muted/60 text-muted-foreground/40 cursor-not-allowed line-through" :
                           disabled ? "text-muted-foreground/40 cursor-not-allowed" :
                           available ? "text-foreground hover:bg-primary/10 hover:text-primary cursor-pointer" :
                           "text-muted-foreground/40 cursor-not-allowed"
@@ -288,7 +292,8 @@ export default function Agendar() {
                         {!isPast && !isDomingo && disp && (
                           <span className={cn(
                             "w-1.5 h-1.5 rounded-full mt-0.5",
-                            available ? "bg-green-500" : "bg-red-400"
+                            bloqueado ? "bg-muted-foreground/30" :
+                            available ? "bg-green-500" : "bg-amber-400"
                           )} />
                         )}
                       </button>
@@ -297,9 +302,10 @@ export default function Agendar() {
                 </div>
               </div>
 
-              <div className="px-4 pb-3 flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="px-4 pb-3 flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                 <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />Disponível</span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-400 inline-block" />Lotado</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />Lotado</span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30 inline-block" />Fechado</span>
               </div>
             </div>
 
