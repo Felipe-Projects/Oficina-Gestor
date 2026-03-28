@@ -86,13 +86,28 @@ export default function ClientesScreen() {
       borderBottomWidth: 1,
       borderBottomColor: C.border,
     },
+    headerRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      marginBottom: 10,
+    },
     headerTitle: { fontSize: 22, fontWeight: "700" as const, color: C.text, fontFamily: "Inter_700Bold" },
+    addBtn: {
+      backgroundColor: C.primary,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+    },
+    addBtnText: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold", color: "#fff" },
     searchRow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       backgroundColor: C.background,
       borderRadius: 10,
-      marginTop: 10,
       paddingHorizontal: 10,
       borderWidth: 1,
       borderColor: C.border,
@@ -147,7 +162,17 @@ export default function ClientesScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>Clientes</Text>
+        <View style={s.headerRow}>
+          <Text style={s.headerTitle}>Clientes</Text>
+          <Pressable
+            style={({ pressed }) => [s.addBtn, { opacity: pressed ? 0.8 : 1 }]}
+            onPress={() => router.push("/cliente/novo")}
+            testID="button-novo-cliente"
+          >
+            <Feather name="plus" size={16} color="#fff" />
+            <Text style={s.addBtnText}>Novo</Text>
+          </Pressable>
+        </View>
         <View style={s.searchRow}>
           <Feather name="search" size={16} color={C.textTertiary} />
           <TextInput

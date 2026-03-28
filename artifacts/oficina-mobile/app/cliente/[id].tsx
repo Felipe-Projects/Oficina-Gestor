@@ -1,6 +1,6 @@
 import { Feather } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import React from "react";
 import {
   ActivityIndicator,
@@ -24,9 +24,13 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   cancelado: { label: "Cancelado", color: "#DC2626" },
 };
 
-function formatDate(dateStr: string) {
-  if (!dateStr) return "-";
-  return new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR");
+function formatDate(val: any): string {
+  if (!val) return "-";
+  try {
+    const d = val instanceof Date ? val : new Date(String(val).length === 10 ? String(val) + "T12:00:00" : val);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("pt-BR");
+  } catch { return "-"; }
 }
 function formatCurrency(val: number) {
   return `R$ ${val.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
@@ -51,6 +55,7 @@ export default function ClienteDetailScreen() {
     queryFn: () => apiGet("/api/ordens"),
   });
 
+  const router = useRouter();
   const cliente = Array.isArray(clientes) ? clientes.find((c: any) => String(c.id) === String(id)) : null;
   const veiculosCliente = Array.isArray(veiculos) ? veiculos.filter((v: any) => String(v.clienteId) === String(id)) : [];
   const ordensCliente = Array.isArray(ordens) ? ordens.filter((o: any) => String(o.clienteId) === String(id)) : [];
@@ -131,6 +136,19 @@ export default function ClienteDetailScreen() {
       justifyContent: "center" as const,
     },
     callBtnText: { fontSize: 14, fontWeight: "600" as const, color: "#fff", fontFamily: "Inter_600SemiBold" },
+    addVBtn: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+      borderWidth: 1.5,
+      borderColor: C.primary,
+      borderStyle: "dashed" as const,
+      borderRadius: 10,
+      padding: 12,
+      justifyContent: "center" as const,
+      marginBottom: 10,
+    },
+    addVBtnText: { fontSize: 14, fontWeight: "600" as const, color: C.primary, fontFamily: "Inter_600SemiBold" },
     pad: { height: Platform.OS === "web" ? 100 : 100 },
   });
 
@@ -187,22 +205,30 @@ export default function ClienteDetailScreen() {
         </View>
 
         {/* Vehicles */}
-        {veiculosCliente.length > 0 && (
-          <View style={[s.section, { paddingTop: 0 }]}>
-            <Text style={s.sectionTitle}>Veículos ({veiculosCliente.length})</Text>
-            {veiculosCliente.map((v: any) => (
-              <View key={v.id} style={s.vCard}>
-                <View style={s.vIcon}>
-                  <Feather name="truck" size={16} color={C.primary} />
-                </View>
-                <View>
-                  <Text style={s.vName}>{v.marca} {v.modelo} {v.ano}</Text>
-                  <Text style={s.vSub}>{v.placa} • {v.cor}</Text>
-                </View>
+        <View style={[s.section, { paddingTop: 0 }]}>
+          <Text style={s.sectionTitle}>
+            Veículos {veiculosCliente.length > 0 ? `(${veiculosCliente.length})` : ""}
+          </Text>
+          {veiculosCliente.map((v: any) => (
+            <View key={v.id} style={s.vCard}>
+              <View style={s.vIcon}>
+                <Feather name="truck" size={16} color={C.primary} />
               </View>
-            ))}
-          </View>
-        )}
+              <View>
+                <Text style={s.vName}>{v.marca} {v.modelo} {v.ano}</Text>
+                <Text style={s.vSub}>{v.placa}{v.cor ? ` • ${v.cor}` : ""}</Text>
+              </View>
+            </View>
+          ))}
+          <Pressable
+            style={({ pressed }) => [s.addVBtn, { opacity: pressed ? 0.7 : 1 }]}
+            onPress={() => router.push({ pathname: "/veiculo/novo", params: { clienteId: String(id) } })}
+            testID="button-add-veiculo"
+          >
+            <Feather name="plus" size={16} color={C.primary} />
+            <Text style={s.addVBtnText}>Adicionar Veículo</Text>
+          </Pressable>
+        </View>
 
         {/* Orders */}
         {ordensCliente.length > 0 && (

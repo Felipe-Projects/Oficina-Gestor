@@ -30,8 +30,13 @@ function RootLayoutNav() {
   return (
     <Stack screenOptions={{ headerBackTitle: "Voltar" }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="os/[id]" options={{ presentation: "card" }} />
-      <Stack.Screen name="cliente/[id]" options={{ presentation: "card" }} />
+      <Stack.Screen name="os/[id]" options={{ title: "Ordem de Serviço", presentation: "card" }} />
+      <Stack.Screen name="os/nova" options={{ title: "Nova OS", presentation: "card" }} />
+      <Stack.Screen name="cliente/[id]" options={{ title: "Cliente", presentation: "card" }} />
+      <Stack.Screen name="cliente/novo" options={{ title: "Novo Cliente", presentation: "card" }} />
+      <Stack.Screen name="veiculo/novo" options={{ title: "Novo Veículo", presentation: "card" }} />
+      <Stack.Screen name="peca/nova" options={{ title: "Nova Peça", presentation: "card" }} />
+      <Stack.Screen name="servico/novo" options={{ title: "Novo Serviço", presentation: "card" }} />
     </Stack>
   );
 }

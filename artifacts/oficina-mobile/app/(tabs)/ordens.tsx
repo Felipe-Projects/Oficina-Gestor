@@ -8,6 +8,7 @@ import {
   Platform,
   Pressable,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -37,9 +38,13 @@ const FILTERS = [
 function formatCurrency(val: number) {
   return `R$ ${val.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 }
-function formatDate(dateStr: string) {
-  if (!dateStr) return "-";
-  return new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR");
+function formatDate(val: any): string {
+  if (!val) return "-";
+  try {
+    const d = val instanceof Date ? val : new Date(String(val).length === 10 ? String(val) + "T12:00:00" : val);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("pt-BR");
+  } catch { return "-"; }
 }
 
 export default function OrdensScreen() {
@@ -84,13 +89,28 @@ export default function OrdensScreen() {
       borderBottomWidth: 1,
       borderBottomColor: C.border,
     },
+    headerRow: {
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
+      marginBottom: 10,
+    },
     headerTitle: { fontSize: 22, fontWeight: "700" as const, color: C.text, fontFamily: "Inter_700Bold" },
+    addBtn: {
+      backgroundColor: C.primary,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      gap: 6,
+    },
+    addBtnText: { fontSize: 14, fontWeight: "600" as const, fontFamily: "Inter_600SemiBold", color: "#fff" },
     searchRow: {
       flexDirection: "row" as const,
       alignItems: "center" as const,
       backgroundColor: C.background,
       borderRadius: 10,
-      marginTop: 10,
       paddingHorizontal: 10,
       borderWidth: 1,
       borderColor: C.border,
@@ -141,7 +161,17 @@ export default function OrdensScreen() {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <Text style={s.headerTitle}>Ordens de Serviço</Text>
+        <View style={s.headerRow}>
+          <Text style={s.headerTitle}>Ordens de Serviço</Text>
+          <Pressable
+            style={({ pressed }) => [s.addBtn, { opacity: pressed ? 0.8 : 1 }]}
+            onPress={() => router.push("/os/nova")}
+            testID="button-nova-os"
+          >
+            <Feather name="plus" size={16} color="#fff" />
+            <Text style={s.addBtnText}>Nova OS</Text>
+          </Pressable>
+        </View>
         <View style={s.searchRow}>
           <Feather name="search" size={16} color={C.textTertiary} />
           <TextInput
@@ -165,7 +195,7 @@ export default function OrdensScreen() {
         keyExtractor={(item: any) => String(item.id)}
         refreshControl={<RefreshControl refreshing={isLoading} onRefresh={refetch} tintColor={C.primary} />}
         ListHeaderComponent={
-          <View style={s.filterRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterRow}>
             {FILTERS.map((f) => {
               const active = filter === f.key;
               return (
@@ -185,7 +215,7 @@ export default function OrdensScreen() {
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         }
         renderItem={({ item: os }) => {
           const st = STATUS_MAP[os.status] ?? { label: os.status, color: C.textSecondary, icon: "circle" };
@@ -226,7 +256,6 @@ export default function OrdensScreen() {
         }
         ListFooterComponent={<View style={s.pad} />}
         showsVerticalScrollIndicator={false}
-        scrollEnabled={ordens.length > 0}
       />
     </View>
   );

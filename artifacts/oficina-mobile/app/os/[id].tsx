@@ -29,9 +29,13 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: string }>
 function formatCurrency(val: number) {
   return `R$ ${val.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")}`;
 }
-function formatDate(dateStr: string) {
-  if (!dateStr) return "-";
-  return new Date(dateStr + "T12:00:00").toLocaleDateString("pt-BR");
+function formatDate(val: any): string {
+  if (!val) return "-";
+  try {
+    const d = val instanceof Date ? val : new Date(String(val).length === 10 ? String(val) + "T12:00:00" : val);
+    if (isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("pt-BR");
+  } catch { return "-"; }
 }
 
 export default function OSDetailScreen() {
