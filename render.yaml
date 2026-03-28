@@ -3,8 +3,8 @@ services:
     name: oficina-mecanica
     env: node
     plan: free
-    buildCommand: pnpm install && BASE_PATH=/ PORT=3000 pnpm --filter @workspace/oficina run build && pnpm --filter @workspace/api-server run build
-    startCommand: pnpm --filter @workspace/db run push && node artifacts/api-server/dist/index.mjs
+    buildCommand: pnpm install && pnpm run build:production
+    startCommand: pnpm start
     envVars:
       - key: NODE_ENV
         value: production
