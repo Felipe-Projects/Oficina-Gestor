@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Car, ClipboardList, Phone, Mail, Plus, Trash2, Pencil, X, Check, CalendarClock, Gauge } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 import { apiRequest } from "@/lib/queryClient";
+import { Modal } from "@/components/ui/Modal";
 
 interface ManutencaoItem {
   id: number;
@@ -286,13 +287,61 @@ function ManutencaoVeiculo({ veiculoId, veiculoLabel }: { veiculoId: number; vei
   );
 }
 
+const emptyVeiculoForm = { placa: "", modelo: "", marca: "", ano: new Date().getFullYear(), km: "", cor: "", observacoes: "" };
+
 export default function ClienteDetalhes() {
   const [match, params] = useRoute("/clientes/:id");
   const id = Number(params?.id);
+  const qc = useQueryClient();
 
   const { data: cliente, isLoading: loadingC } = useGetCliente(id, { query: { enabled: !!id } });
   const { data: veiculos, isLoading: loadingV } = useListVeiculos({ clienteId: id }, { query: { enabled: !!id } });
   const { data: ordens, isLoading: loadingO } = useListOrdens();
+
+  const [editVeiculoId, setEditVeiculoId] = useState<number | null>(null);
+  const [veiculoForm, setVeiculoForm] = useState({ ...emptyVeiculoForm });
+
+  const updateVeiculoMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => apiRequest("PUT", `/api/veiculos/${id}`, data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/veiculos"] });
+      setEditVeiculoId(null);
+    },
+  });
+
+  const openEditVeiculo = (v: any) => {
+    setEditVeiculoId(v.id);
+    setVeiculoForm({
+      placa: v.placa,
+      modelo: v.modelo,
+      marca: v.marca,
+      ano: v.ano,
+      km: v.km != null ? String(v.km) : "",
+      cor: v.cor ?? "",
+      observacoes: v.observacoes ?? "",
+    });
+  };
+
+  const handleSaveVeiculo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editVeiculoId) return;
+    await updateVeiculoMutation.mutateAsync({
+      id: editVeiculoId,
+      data: {
+        clienteId: id,
+        placa: veiculoForm.placa,
+        modelo: veiculoForm.modelo,
+        marca: veiculoForm.marca,
+        ano: Number(veiculoForm.ano),
+        km: veiculoForm.km ? Number(veiculoForm.km) : undefined,
+        cor: veiculoForm.cor || undefined,
+        observacoes: veiculoForm.observacoes || undefined,
+      },
+    });
+  };
+
+  const fv = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setVeiculoForm(prev => ({ ...prev, [field]: e.target.value }));
 
   if (loadingC) return <div className="p-12 text-center text-muted-foreground">Carregando...</div>;
   if (!cliente) return <div className="p-12 text-center text-red-500">Cliente não encontrado.</div>;
@@ -344,12 +393,19 @@ export default function ClienteDetalhes() {
             </div>
             <div className="space-y-3">
               {veiculos?.map(v => (
-                <div key={v.id} className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50">
-                  <div className="text-primary"><Car className="w-5 h-5"/></div>
-                  <div>
-                    <p className="font-bold text-sm text-foreground">{v.modelo} <span className="text-muted-foreground font-normal">({v.ano})</span></p>
-                    <p className="font-mono text-xs text-muted-foreground mt-0.5">{v.placa.toUpperCase()}</p>
+                <div key={v.id} className="group flex items-center gap-3 p-3 bg-muted/30 rounded-xl border border-border/50 hover:border-border transition-colors">
+                  <div className="text-primary shrink-0"><Car className="w-5 h-5"/></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-sm text-foreground">{v.marca} {v.modelo} <span className="text-muted-foreground font-normal">({v.ano})</span></p>
+                    <p className="font-mono text-xs text-muted-foreground mt-0.5">{v.placa.toUpperCase()}{v.km ? ` • ${v.km.toLocaleString("pt-BR")} km` : ""}</p>
                   </div>
+                  <button
+                    onClick={() => openEditVeiculo(v)}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
+                    title="Editar veículo"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               ))}
               {veiculos?.length === 0 && <p className="text-sm text-muted-foreground">Nenhum veículo cadastrado.</p>}
@@ -424,6 +480,68 @@ export default function ClienteDetalhes() {
           </div>
         </div>
       )}
+
+      {/* Modal editar veículo */}
+      <Modal
+        isOpen={editVeiculoId !== null}
+        onClose={() => setEditVeiculoId(null)}
+        title="Editar Veículo"
+      >
+        <form onSubmit={handleSaveVeiculo} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Placa *</label>
+              <input
+                required type="text"
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none uppercase font-mono focus:border-primary"
+                value={veiculoForm.placa}
+                onChange={e => setVeiculoForm(p => ({ ...p, placa: e.target.value.toUpperCase() }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Marca *</label>
+              <input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-primary" value={veiculoForm.marca} onChange={fv("marca")} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Modelo *</label>
+              <input required type="text" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-primary" value={veiculoForm.modelo} onChange={fv("modelo")} />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Ano *</label>
+              <input required type="number" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-primary" value={veiculoForm.ano} onChange={fv("ano")} min="1900" max="2100" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">KM atual</label>
+              <input type="number" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-primary" value={veiculoForm.km} onChange={fv("km")} min="0" placeholder="Ex: 75000" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cor</label>
+              <input type="text" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-primary" value={veiculoForm.cor} onChange={fv("cor")} placeholder="Ex: Prata" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Observações</label>
+            <textarea
+              rows={2}
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background outline-none focus:border-primary resize-none text-sm"
+              value={veiculoForm.observacoes}
+              onChange={fv("observacoes")}
+              placeholder="Informações adicionais..."
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={updateVeiculoMutation.isPending}
+            className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 mt-2 disabled:opacity-50"
+          >
+            {updateVeiculoMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+          </button>
+        </form>
+      </Modal>
     </div>
   );
 }
