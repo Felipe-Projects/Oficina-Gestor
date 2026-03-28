@@ -40,6 +40,7 @@ export default function OrdemForm() {
   const { data: clientes } = useListClientes();
   const { data: servicosCat } = useListServicos();
   const { data: pecasCat } = useListPecas();
+  // @ts-ignore generated hook type mismatch with query v5
   const { data: existingOs, isLoading: isLoadingOs } = useGetOrdem(osId as number, { query: { enabled: !isNew && !!osId } });
 
   const createMutation = useCreateOrdem();
@@ -62,6 +63,7 @@ export default function OrdemForm() {
   const [manutencaoItems, setManutencaoItems] = useState<ManutencaoOSItem[]>([]);
   const [showManutencao, setShowManutencao] = useState(false);
 
+  // @ts-ignore generated hook type mismatch with query v5
   const { data: veiculos } = useListVeiculos({ clienteId: clienteId as number }, { query: { enabled: !!clienteId } });
   const { data: manutencaoExistente } = useQuery<ManutencaoOSItem[]>({
     queryKey: ["/api/manutencao", veiculoId],

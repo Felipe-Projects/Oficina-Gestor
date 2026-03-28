@@ -166,7 +166,8 @@ function DespesasPanel() {
 
 // ── Main Page ──────────────────────────────────────────────────────────────
 export default function Financeiro() {
-  const { data: resumo } = useGetResumoFinanceiro();
+  const { data: resumoRaw } = useGetResumoFinanceiro();
+  const resumo = resumoRaw as typeof resumoRaw & { custoPecas: number };
   const { data: fluxo } = useGetFluxoCaixa();
   const { data: porMes } = useFinanceiroPorMes();
   const { data: ranking } = useServicosRanking();

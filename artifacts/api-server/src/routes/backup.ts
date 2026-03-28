@@ -129,7 +129,10 @@ router.get("/historico/:id/baixar", async (req, res) => {
   try {
     const id = Number(req.params.id);
     const [backup] = await db.select().from(backupsTable).where(sql`${backupsTable.id} = ${id}`);
-    if (!backup) return res.status(404).json({ error: "Backup não encontrado" });
+    if (!backup) {
+      res.status(404).json({ error: "Backup não encontrado" });
+      return;
+    }
 
     res.setHeader("Content-Type", "application/json");
     res.setHeader("Content-Disposition", `attachment; filename="${backup.nome.replace(/ /g, "_")}.json"`);
@@ -170,7 +173,8 @@ router.post("/importar", async (req, res) => {
   try {
     const parsed = importSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: "Arquivo de backup inválido" });
+      res.status(400).json({ error: "Arquivo de backup inválido" });
+      return;
     }
 
     const { dados } = parsed.data;

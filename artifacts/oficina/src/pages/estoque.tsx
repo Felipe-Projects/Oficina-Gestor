@@ -69,7 +69,7 @@ export default function Estoque() {
                       <span className={cn("font-bold text-lg", p.estoqueAlerta ? "text-red-600 dark:text-red-400" : "text-foreground")}>
                         {p.quantidade}
                       </span>
-                      {p.estoqueAlerta && <AlertTriangle className="w-4 h-4 text-red-500" title="Estoque Baixo" />}
+                      {p.estoqueAlerta && <AlertTriangle className="w-4 h-4 text-red-500" aria-label="Estoque Baixo" />}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">Min: {p.quantidadeMinima}</div>
                   </td>
