@@ -432,7 +432,7 @@ export default function OrdemForm() {
                       type="number" 
                       value={p.quantidade}
                       onChange={e => updatePeca(idx, { quantidade: Number(e.target.value) })}
-                      className="w-14 px-2 py-2 bg-muted rounded-lg outline-none text-sm text-center pl-[1px] pr-[1px]"
+                      className="w-14 px-2 py-2 bg-muted rounded-lg outline-none text-sm text-center pl-[8px] pr-[8px]"
                       min="1" title="Qtd"
                     />
                     <div className="flex flex-col gap-0.5">
