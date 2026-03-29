@@ -441,7 +441,7 @@ export default function OrdemForm() {
                         type="number" 
                         value={p.valorCusto}
                         onChange={e => updatePeca(idx, { valorCusto: Number(e.target.value) })}
-                        className="w-16 px-1 py-1.5 bg-muted rounded-lg outline-none text-sm text-orange-600 dark:text-orange-400"
+                        className="w-16 px-1 py-1.5 bg-muted rounded-lg outline-none text-sm text-orange-600 dark:text-orange-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         step="0.01" min="0" title="Valor de Custo (interno)"
                       />
                     </div>
@@ -451,7 +451,7 @@ export default function OrdemForm() {
                         type="number" 
                         value={p.valorUnitario}
                         onChange={e => updatePeca(idx, { valorUnitario: Number(e.target.value) })}
-                        className="w-16 px-1 py-1.5 bg-muted rounded-lg outline-none text-sm font-medium"
+                        className="w-16 px-1 py-1.5 bg-muted rounded-lg outline-none text-sm font-medium [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         step="0.01" min="0" title="Valor de Venda (vai para o orçamento)"
                       />
                     </div>
