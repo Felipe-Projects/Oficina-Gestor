@@ -480,7 +480,7 @@ export default function OrdemForm() {
                     </div>
                     <button type="button" onClick={() => {
                       const tid = p.tempId;
-                      setPecas(pecas.filter(x => x.tempId !== tid));
+                      setPecas(prev => prev.filter(x => x.tempId !== tid));
                       setManutencaoItems(prev => prev.filter(m => m.linkedPecaTempId !== tid));
                     }} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
                       <Trash2 className="w-4 h-4" />
