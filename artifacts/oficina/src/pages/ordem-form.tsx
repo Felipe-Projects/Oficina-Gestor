@@ -415,8 +415,8 @@ export default function OrdemForm() {
             <div className="flex-1 space-y-3">
               {pecas.map((p, idx) => (
                 <div key={p.tempId} className="bg-background rounded-xl border border-border/50 overflow-hidden">
-                  {/* Linha principal */}
-                  <div className="flex gap-2 items-center p-2">
+                  {/* Linha 1: seleção da peça + estoque + ações */}
+                  <div className="flex gap-2 items-center px-2 pt-2 pb-1">
                     <select 
                       value={p.pecaId}
                       onChange={e => {
@@ -424,54 +424,72 @@ export default function OrdemForm() {
                         const catInfo = pecasCat?.find(c => c.id === newId);
                         updatePeca(idx, { pecaId: newId, ...(catInfo ? { valorCusto: catInfo.valorCusto, valorUnitario: catInfo.valorVenda } : {}) });
                       }}
-                      className="flex-1 px-3 py-2 bg-transparent outline-none text-sm"
+                      className="flex-1 min-w-0 px-3 py-1.5 bg-transparent outline-none text-sm"
                     >
                       <option value={0} disabled>Selecione...</option>
-                      {pecasCat?.map(cat => <option key={cat.id} value={cat.id}>{cat.nome} (Estoque: {cat.quantidade})</option>)}
+                      {pecasCat?.map(cat => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
                     </select>
-                    <input 
-                      type="number" 
-                      value={p.quantidade}
-                      onChange={e => updatePeca(idx, { quantidade: Number(e.target.value) })}
-                      className="w-14 px-2 py-2 bg-muted rounded-lg outline-none text-sm text-center"
-                      min="1" title="Qtd"
-                    />
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] text-muted-foreground font-medium px-1">Custo</span>
-                      <input 
-                        type="number" 
-                        value={p.valorCusto}
-                        onChange={e => updatePeca(idx, { valorCusto: Number(e.target.value) })}
-                        className="w-24 px-2 py-1.5 bg-muted rounded-lg outline-none text-sm text-orange-600 dark:text-orange-400"
-                        step="0.01" min="0" title="Valor de Custo (interno)"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] text-muted-foreground font-medium px-1">Venda</span>
-                      <input 
-                        type="number" 
-                        value={p.valorUnitario}
-                        onChange={e => updatePeca(idx, { valorUnitario: Number(e.target.value) })}
-                        className="w-24 px-2 py-1.5 bg-muted rounded-lg outline-none text-sm font-medium"
-                        step="0.01" min="0" title="Valor de Venda (vai para o orçamento)"
-                      />
-                    </div>
+                    {(() => {
+                      const cat = pecasCat?.find(c => c.id === p.pecaId);
+                      return cat ? (
+                        <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">
+                          Estoque: <strong>{cat.quantidade}</strong>
+                        </span>
+                      ) : null;
+                    })()}
                     <button
                       type="button"
                       title="Próxima troca"
                       onClick={() => updatePeca(idx, { showTroca: !p.showTroca })}
                       className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        p.showTroca
-                          ? "text-primary bg-primary/10"
-                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        "p-1.5 rounded-lg transition-colors shrink-0",
+                        p.showTroca ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
                       )}
                     >
                       <CalendarClock className="w-4 h-4" />
                     </button>
-                    <button type="button" onClick={() => setPecas(pecas.filter(x => x.tempId !== p.tempId))} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                    <button type="button" onClick={() => setPecas(pecas.filter(x => x.tempId !== p.tempId))} className="p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg shrink-0">
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
+                  {/* Linha 2: qtd + custo + venda */}
+                  <div className="flex gap-2 items-center px-2 pb-2 border-t border-border/30 pt-1.5">
+                    <div className="flex flex-col gap-0.5 w-14">
+                      <span className="text-[10px] text-muted-foreground font-medium px-0.5">Qtd</span>
+                      <input 
+                        type="number" 
+                        value={p.quantidade}
+                        onChange={e => updatePeca(idx, { quantidade: Number(e.target.value) })}
+                        className="w-full px-2 py-1.5 bg-muted rounded-lg outline-none text-sm text-center"
+                        min="1"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5 flex-1">
+                      <span className="text-[10px] text-muted-foreground font-medium px-0.5">Custo (R$)</span>
+                      <input 
+                        type="number" 
+                        value={p.valorCusto}
+                        onChange={e => updatePeca(idx, { valorCusto: Number(e.target.value) })}
+                        className="w-full px-2 py-1.5 bg-muted rounded-lg outline-none text-sm text-orange-600 dark:text-orange-400"
+                        step="0.01" min="0"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5 flex-1">
+                      <span className="text-[10px] text-muted-foreground font-medium px-0.5">Venda (R$)</span>
+                      <input 
+                        type="number" 
+                        value={p.valorUnitario}
+                        onChange={e => updatePeca(idx, { valorUnitario: Number(e.target.value) })}
+                        className="w-full px-2 py-1.5 bg-muted rounded-lg outline-none text-sm font-medium"
+                        step="0.01" min="0"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5 items-end justify-end self-end pb-0.5 shrink-0">
+                      <span className="text-[10px] text-muted-foreground font-medium">Total</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        {(p.quantidade * p.valorUnitario).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Seção Próxima Troca */}
