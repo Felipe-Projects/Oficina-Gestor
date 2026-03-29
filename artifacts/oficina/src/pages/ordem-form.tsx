@@ -432,26 +432,26 @@ export default function OrdemForm() {
                       type="number" 
                       value={p.quantidade}
                       onChange={e => updatePeca(idx, { quantidade: Number(e.target.value) })}
-                      className="w-14 px-2 py-2 bg-muted rounded-lg outline-none text-sm text-center pl-[8px] pr-[8px]"
+                      className="w-9 px-1 py-2 bg-muted rounded-lg outline-none text-sm text-center"
                       min="1" title="Qtd"
                     />
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] text-muted-foreground font-medium px-1">Custo</span>
+                      <span className="text-[10px] text-muted-foreground font-medium px-0.5">Custo</span>
                       <input 
                         type="number" 
                         value={p.valorCusto}
                         onChange={e => updatePeca(idx, { valorCusto: Number(e.target.value) })}
-                        className="w-24 px-2 py-1.5 bg-muted rounded-lg outline-none text-sm text-orange-600 dark:text-orange-400"
+                        className="w-16 px-1 py-1.5 bg-muted rounded-lg outline-none text-sm text-orange-600 dark:text-orange-400"
                         step="0.01" min="0" title="Valor de Custo (interno)"
                       />
                     </div>
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-[10px] text-muted-foreground font-medium px-1">Venda</span>
+                      <span className="text-[10px] text-muted-foreground font-medium px-0.5">Venda</span>
                       <input 
                         type="number" 
                         value={p.valorUnitario}
                         onChange={e => updatePeca(idx, { valorUnitario: Number(e.target.value) })}
-                        className="w-24 px-2 py-1.5 bg-muted rounded-lg outline-none text-sm font-medium"
+                        className="w-16 px-1 py-1.5 bg-muted rounded-lg outline-none text-sm font-medium"
                         step="0.01" min="0" title="Valor de Venda (vai para o orçamento)"
                       />
                     </div>
