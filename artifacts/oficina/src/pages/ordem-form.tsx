@@ -368,7 +368,7 @@ export default function OrdemForm() {
                       if (catInfo) newS[idx].valor = catInfo.valorPadrao;
                       setServicos(newS);
                     }}
-                    className="flex-1 px-3 py-2 bg-transparent outline-none text-sm"
+                    className="flex-1 px-3 py-2 outline-none text-sm rounded-lg"
                   >
                     <option value={0} disabled>Selecione...</option>
                     {servicosCat?.map(cat => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
@@ -446,7 +446,7 @@ export default function OrdemForm() {
                           ));
                         }
                       }}
-                      className="flex-1 min-w-0 px-3 py-2 bg-transparent outline-none text-sm"
+                      className="flex-1 min-w-0 px-3 py-2 outline-none text-sm rounded-lg"
                     >
                       <option value={0} disabled>Selecione...</option>
                       {pecasCat?.map(cat => <option key={cat.id} value={cat.id}>{cat.nome}</option>)}
