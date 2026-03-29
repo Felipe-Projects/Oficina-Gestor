@@ -50,11 +50,10 @@ async function calcOrderTotals(ordensIds: number[]) {
     .from(ordensPecasTable)
     .where(inArray(ordensPecasTable.ordemId, ordensIds));
 
-  // Cost of parts = join with pecas table to get valorCusto
+  // Cost of parts = use valorCusto stored directly in ordens_pecas
   const [pecaCustoRow] = await db
-    .select({ total: sql<string>`coalesce(sum(${pecasTable.valorCusto} * ${ordensPecasTable.quantidade}), 0)` })
+    .select({ total: sql<string>`coalesce(sum(${ordensPecasTable.valorCusto} * ${ordensPecasTable.quantidade}), 0)` })
     .from(ordensPecasTable)
-    .leftJoin(pecasTable, eq(ordensPecasTable.pecaId, pecasTable.id))
     .where(inArray(ordensPecasTable.ordemId, ordensIds));
 
   const receitas = parseFloat(servicoRow?.total ?? "0") + parseFloat(pecaVendaRow?.total ?? "0");

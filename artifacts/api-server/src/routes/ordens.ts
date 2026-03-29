@@ -23,6 +23,7 @@ const addPecaSchema = z.object({
   pecaId: z.number().int(),
   quantidade: z.number().int().positive(),
   valorUnitario: z.number(),
+  valorCusto: z.number().optional().default(0),
   proximaTrocaData: z.string().optional().nullable(),
   proximaTrocaKm: z.number().int().optional().nullable(),
 });
@@ -119,6 +120,7 @@ async function buildOrdemDetalhada(ordemId: number) {
       codigo: pecasTable.codigo,
       quantidade: ordensPecasTable.quantidade,
       valorUnitario: ordensPecasTable.valorUnitario,
+      valorCusto: ordensPecasTable.valorCusto,
       proximaTrocaData: ordensPecasTable.proximaTrocaData,
       proximaTrocaKm: ordensPecasTable.proximaTrocaKm,
     })
@@ -138,7 +140,7 @@ async function buildOrdemDetalhada(ordemId: number) {
   return {
     ...ordem,
     servicos: servicos.map((s) => ({ ...s, valor: parseNum(s.valor) })),
-    pecas: pecas.map((p) => ({ ...p, valorUnitario: parseNum(p.valorUnitario), valorTotal: parseNum(p.valorUnitario) * p.quantidade })),
+    pecas: pecas.map((p) => ({ ...p, valorUnitario: parseNum(p.valorUnitario), valorCusto: parseNum(p.valorCusto), valorTotal: parseNum(p.valorUnitario) * p.quantidade })),
     totalServicos,
     totalPecas,
     total: totalServicos + totalPecas,
@@ -369,6 +371,7 @@ router.post("/", async (req, res) => {
         pecaId: p.pecaId,
         quantidade: p.quantidade,
         valorUnitario: String(p.valorUnitario),
+        valorCusto: String(p.valorCusto ?? 0),
         proximaTrocaData: p.proximaTrocaData ?? null,
         proximaTrocaKm: p.proximaTrocaKm ?? null,
       }))
@@ -448,6 +451,7 @@ router.put("/:id", async (req, res) => {
           pecaId: p.pecaId,
           quantidade: p.quantidade,
           valorUnitario: String(p.valorUnitario),
+          valorCusto: String(p.valorCusto ?? 0),
           proximaTrocaData: p.proximaTrocaData ?? null,
           proximaTrocaKm: p.proximaTrocaKm ?? null,
         }))
