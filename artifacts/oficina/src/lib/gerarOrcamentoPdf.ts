@@ -21,271 +21,327 @@ export interface OrcamentoPdfData {
   total: number;
 }
 
-function formatBRL(v: number) {
-  return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function fmt(v: number) {
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function formatDateBR(iso: string) {
-  const d = new Date(iso);
+function dataBR(iso: string) {
+  if (!iso) return "-";
+  const d = new Date(String(iso).length === 10 ? iso + "T12:00:00" : iso);
   return d.toLocaleDateString("pt-BR");
 }
 
-const COR_PRIMARIA = [37, 99, 235] as const;   // blue-600
-const COR_ESCURO   = [15, 23, 42]  as const;   // slate-900
-const COR_CINZA    = [100, 116, 139] as const; // slate-500
-const COR_CLARO    = [241, 245, 249] as const; // slate-100
-const COR_BRANCO   = [255, 255, 255] as const;
+type RGB = [number, number, number];
+
+const NAVY: RGB   = [13,  36,  98];
+const ORANGE: RGB = [245, 166, 35];
+const BLUE_H: RGB = [28,  58, 158];
+const GRAY_BG: RGB= [232, 235, 244];
+const GRAY_ROW: RGB=[246,247,250];
+const WHITE: RGB  = [255, 255, 255];
+const DARK: RGB   = [20,  20,  40];
+const MID: RGB    = [95, 100, 130];
+const BORDER: RGB = [205, 210, 228];
 
 export function gerarOrcamentoPdf(data: OrcamentoPdfData) {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const pw = 210; // page width
-  const ml = 15;  // margin left
-  const mr = 15;  // margin right
-  const cw = pw - ml - mr; // content width
-  let y = 0;
+  const pw = 210;
+  const ml = 14;
+  const cw = pw - ml * 2;
+  const gap = 7;
+  const colW = (cw - gap) / 2;
+  const lx = ml;
+  const rx = ml + colW + gap;
 
-  // ── HEADER BAR ──────────────────────────────────────────────────────────
-  doc.setFillColor(...COR_PRIMARIA);
-  doc.rect(0, 0, pw, 38, "F");
+  const ROW = 6.5;
+  const SEC_H = 8;
+  const COL_H = 6.5;
 
-  // Logo placeholder (circle)
-  doc.setFillColor(...COR_BRANCO);
-  doc.circle(ml + 8, 19, 8, "F");
-  doc.setFillColor(...COR_PRIMARIA);
-  doc.setFontSize(9);
+  // ── HEADER ────────────────────────────────────────────────────────────────
+  doc.setFillColor(...NAVY);
+  doc.rect(0, 0, pw, 42, "F");
+
+  // Decorative circle/gear top-right
+  const gx = pw - 22, gy = 21;
+  doc.setFillColor(30, 55, 125);
+  doc.circle(gx, gy, 16, "F");
+  doc.setFillColor(50, 80, 155);
+  doc.circle(gx, gy, 12, "F");
+  doc.setFillColor(30, 55, 125);
+  doc.circle(gx, gy, 6, "F");
+  // Wrench handle (simplified)
+  doc.setFillColor(180, 195, 230);
+  doc.roundedRect(gx - 1.8, gy - 12, 3.6, 18, 1.5, 1.5, "F");
+  doc.circle(gx, gy - 13, 4.5, "F");
+  doc.setFillColor(30, 55, 125);
+  doc.circle(gx, gy - 13, 2.5, "F");
+  // Screwdriver diagonal (two thin rects rotated via line)
+  doc.setDrawColor(180, 195, 230);
+  doc.setLineWidth(2.2);
+  doc.line(gx - 10, gy + 10, gx + 10, gy - 10);
+  doc.setLineWidth(0.3);
+
+  // "ORÇAMENTO" in white
+  doc.setTextColor(...WHITE);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COR_PRIMARIA);
-  doc.text("OP", ml + 4.5, 20.5);
+  doc.setFontSize(24);
+  doc.text("ORÇAMENTO", ml, 17);
 
-  // Workshop name
-  doc.setTextColor(...COR_BRANCO);
+  // "OFICINA MECÂNICA" in orange italic
+  doc.setTextColor(...ORANGE);
+  doc.setFont("helvetica", "bolditalic");
   doc.setFontSize(16);
+  doc.text("OFICINA MECÂNICA", ml, 30);
+
+  // Orange accent stripe
+  doc.setFillColor(...ORANGE);
+  doc.rect(0, 42, pw, 2, "F");
+
+  let y = 50;
+
+  // ── OS INFO BAR ────────────────────────────────────────────────────────────
+  doc.setFillColor(...GRAY_BG);
+  doc.rect(ml, y, cw, 10, "F");
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.rect(ml, y, cw, 10, "D");
+
+  const iy = y + 6.8;
+  doc.setTextColor(...NAVY);
   doc.setFont("helvetica", "bold");
-  doc.text("Oficina Pro", ml + 20, 16);
   doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.text("Gestão Automotiva", ml + 20, 22.5);
+  doc.text(`N° OS:  ${data.numero}`, ml + 5, iy);
+  doc.text(`DATA:  ${dataBR(data.dataEntrada)}`, ml + cw / 2, iy, { align: "center" });
+  doc.text("VALIDADE:  7 DIAS", ml + cw - 5, iy, { align: "right" });
 
-  // OS Info (top right)
-  doc.setFontSize(20);
-  doc.setFont("helvetica", "bold");
-  doc.text(`ORÇAMENTO`, pw - mr, 16, { align: "right" });
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Nº ${data.numero}`, pw - mr, 23, { align: "right" });
-  doc.text(
-    `Emitido: ${formatDateBR(data.dataEntrada)}`,
-    pw - mr,
-    29,
-    { align: "right" }
-  );
-  if (data.dataPrevisao) {
-    doc.text(`Prev. entrega: ${formatDateBR(data.dataPrevisao)}`, pw - mr, 35, { align: "right" });
-  }
+  // Separators
+  doc.setDrawColor(...BORDER);
+  doc.line(ml + cw / 3, y + 2, ml + cw / 3, y + 8);
+  doc.line(ml + (cw * 2) / 3, y + 2, ml + (cw * 2) / 3, y + 8);
 
-  y = 46;
+  y += 15;
 
-  // ── INFO SECTION ────────────────────────────────────────────────────────
-  const halfW = (cw - 6) / 2;
+  // ── CLIENTE / VEÍCULO ─────────────────────────────────────────────────────
+  const cvH = 32;
 
-  // Cliente card
-  doc.setFillColor(...COR_CLARO);
-  doc.roundedRect(ml, y, halfW, 38, 2, 2, "F");
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COR_PRIMARIA);
-  doc.text("CLIENTE", ml + 5, y + 7);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COR_ESCURO);
-  doc.text(data.clienteNome, ml + 5, y + 14);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...COR_CINZA);
-  let cy = y + 20;
-  if (data.clienteTelefone) { doc.text(`Tel: ${data.clienteTelefone}`, ml + 5, cy); cy += 6; }
-  if (data.clienteEmail)    { doc.text(data.clienteEmail, ml + 5, cy); }
+  function drawCard(x: number, label: string, lines: string[]) {
+    doc.setFillColor(...GRAY_BG);
+    doc.rect(x, y, colW, cvH, "F");
+    doc.setDrawColor(...BORDER);
+    doc.setLineWidth(0.3);
+    doc.rect(x, y, colW, cvH, "D");
+    doc.setDrawColor(...BORDER);
+    doc.line(x, y + 10, x + colW, y + 10);
 
-  // Veículo card
-  const vx = ml + halfW + 6;
-  doc.setFillColor(...COR_CLARO);
-  doc.roundedRect(vx, y, halfW, 38, 2, 2, "F");
-  doc.setFontSize(7.5);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COR_PRIMARIA);
-  doc.text("VEÍCULO", vx + 5, y + 7);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COR_ESCURO);
-  doc.text(`${data.veiculoMarca} ${data.veiculoModelo}`, vx + 5, y + 14);
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...COR_CINZA);
-  doc.text(`Placa: ${data.veiculoPlaca}`, vx + 5, y + 20);
-  if (data.veiculoAno) doc.text(`Ano: ${data.veiculoAno}`, vx + 5, y + 26);
-  if (data.veiculoKm)  doc.text(`KM: ${data.veiculoKm.toLocaleString("pt-BR")}`, vx + 5, y + 32);
-
-  y += 45;
-
-  // ── SERVICES TABLE ───────────────────────────────────────────────────────
-  function drawSectionHeader(label: string) {
-    doc.setFillColor(...COR_PRIMARIA);
-    doc.roundedRect(ml, y, cw, 8, 1, 1, "F");
-    doc.setFontSize(8.5);
+    doc.setTextColor(...NAVY);
     doc.setFont("helvetica", "bold");
-    doc.setTextColor(...COR_BRANCO);
-    doc.text(label, ml + 4, y + 5.5);
-    y += 10;
-  }
+    doc.setFontSize(9);
+    doc.text(label, x + 4, y + 7);
 
-  function drawTableHeader(cols: { label: string; x: number; w: number; align?: "right" | "left" }[]) {
-    doc.setFillColor(226, 232, 240); // slate-200
-    doc.rect(ml, y, cw, 7, "F");
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...COR_CINZA);
-    for (const col of cols) {
-      if (col.align === "right") {
-        doc.text(col.label, ml + col.x + col.w, y + 5, { align: "right" });
+    lines.forEach((line, i) => {
+      if (i === 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...DARK);
       } else {
-        doc.text(col.label, ml + col.x + 2, y + 5);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(...MID);
+      }
+      doc.text(line, x + 4, y + 16 + i * 7);
+    });
+  }
+
+  const veicLines = [
+    `${data.veiculoMarca} ${data.veiculoModelo}`,
+    `Placa: ${data.veiculoPlaca}`,
+    data.veiculoKm ? `KM: ${data.veiculoKm.toLocaleString("pt-BR")}` : (data.veiculoAno ? `Ano: ${data.veiculoAno}` : ""),
+  ].filter(Boolean);
+
+  const cliLines = [
+    data.clienteNome,
+    data.clienteTelefone ? `Telefone: ${data.clienteTelefone}` : "",
+    data.clienteEmail ?? "",
+  ].filter(Boolean);
+
+  drawCard(lx, "CLIENTE:", cliLines);
+  drawCard(rx, "VEÍCULO:", veicLines);
+
+  y += cvH + 7;
+
+  // ── TWO-COLUMN TABLES ─────────────────────────────────────────────────────
+  function sectionHeader(x: number, yy: number, label: string): number {
+    doc.setFillColor(...NAVY);
+    doc.rect(x, yy, colW, SEC_H, "F");
+    doc.setTextColor(...WHITE);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    doc.text(label, x + 4, yy + 5.8);
+    return yy + SEC_H;
+  }
+
+  function colHeader(x: number, yy: number, cols: { label: string; cx: number; cw: number; right?: boolean }[]): number {
+    doc.setFillColor(...BLUE_H);
+    doc.rect(x, yy, colW, COL_H, "F");
+    doc.setTextColor(...WHITE);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.8);
+    for (const c of cols) {
+      if (c.right) {
+        doc.text(c.label, x + c.cx + c.cw - 2, yy + 4.5, { align: "right" });
+      } else {
+        doc.text(c.label, x + c.cx + 2, yy + 4.5);
       }
     }
-    y += 7;
+    return yy + COL_H;
   }
 
-  function drawTableRow(
-    cols: { value: string; x: number; w: number; align?: "right" | "left"; bold?: boolean }[],
-    shade: boolean
-  ) {
-    if (shade) {
-      doc.setFillColor(248, 250, 252);
-      doc.rect(ml, y, cw, 7, "F");
-    }
-    doc.setFontSize(9);
-    doc.setTextColor(...COR_ESCURO);
-    for (const col of cols) {
-      doc.setFont("helvetica", col.bold ? "bold" : "normal");
-      if (col.align === "right") {
-        doc.text(col.value, ml + col.x + col.w, y + 5.2, { align: "right" });
-      } else {
-        doc.text(col.value, ml + col.x + 2, y + 5.2);
+  function tableRow(
+    x: number, yy: number, idx: number,
+    cols: { value: string; cx: number; cw: number; right?: boolean; bold?: boolean }[],
+    dividers?: number[]
+  ): number {
+    doc.setFillColor(...(idx % 2 === 1 ? GRAY_ROW : WHITE));
+    doc.rect(x, yy, colW, ROW, "F");
+
+    if (dividers) {
+      doc.setDrawColor(...BORDER);
+      doc.setLineWidth(0.2);
+      for (const dx of dividers) {
+        doc.line(x + dx, yy, x + dx, yy + ROW);
       }
     }
-    y += 7;
+
+    for (const c of cols) {
+      doc.setFont("helvetica", c.bold ? "bold" : "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...DARK);
+      if (c.right) {
+        doc.text(c.value, x + c.cx + c.cw - 2, yy + 4.5, { align: "right" });
+      } else {
+        doc.text(c.value, x + c.cx + 2, yy + 4.5);
+      }
+    }
+    return yy + ROW;
   }
 
-  // Serviços
-  if (data.servicos.length > 0) {
-    drawSectionHeader("SERVIÇOS");
-    drawTableHeader([
-      { label: "DESCRIÇÃO", x: 0, w: 128 },
-      { label: "VALOR", x: 128, w: 52, align: "right" },
-    ]);
-    data.servicos.forEach((s, i) => {
-      drawTableRow(
-        [
-          { value: s.nome, x: 0, w: 128 },
-          { value: formatBRL(s.valor), x: 128, w: 52, align: "right" },
-        ],
-        i % 2 === 1
-      );
-    });
-    y += 2;
-  }
+  // ── LEFT: SERVIÇOS ────────────────────────────────────────────────────────
+  const svcW = colW - 28;
+  let yL = sectionHeader(lx, y, "SERVIÇOS:");
+  const tableTopL = yL;
+  yL = colHeader(lx, yL, [
+    { label: "Descrição",  cx: 0,    cw: svcW },
+    { label: "Valor (R$)", cx: svcW, cw: 28, right: true },
+  ]);
 
-  // Peças
-  if (data.pecas.length > 0) {
-    drawSectionHeader("PEÇAS / MATERIAIS");
-    drawTableHeader([
-      { label: "ITEM", x: 0, w: 90 },
-      { label: "QTD", x: 90, w: 20, align: "right" },
-      { label: "UNIT.", x: 110, w: 30, align: "right" },
-      { label: "TOTAL", x: 140, w: 40, align: "right" },
-    ]);
-    data.pecas.forEach((p, i) => {
-      drawTableRow(
-        [
-          { value: p.nome, x: 0, w: 90 },
-          { value: String(p.quantidade), x: 90, w: 20, align: "right" },
-          { value: formatBRL(p.valorUnitario), x: 110, w: 30, align: "right" },
-          { value: formatBRL(p.quantidade * p.valorUnitario), x: 140, w: 40, align: "right" },
-        ],
-        i % 2 === 1
-      );
-    });
-    y += 2;
-  }
+  data.servicos.forEach((s, i) => {
+    const nome = s.nome.length > 30 ? s.nome.slice(0, 29) + "…" : s.nome;
+    yL = tableRow(lx, yL, i, [
+      { value: nome,        cx: 0,    cw: svcW },
+      { value: fmt(s.valor), cx: svcW, cw: 28, right: true, bold: true },
+    ], [svcW]);
+  });
 
-  // ── TOTALS ───────────────────────────────────────────────────────────────
-  const totalsX = ml + cw - 80;
-  const totalsW = 80;
+  // Table border
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.rect(lx, tableTopL, colW, yL - tableTopL, "D");
 
-  function drawTotalLine(label: string, value: string, bold = false) {
-    doc.setFont("helvetica", bold ? "bold" : "normal");
-    doc.setFontSize(bold ? 10.5 : 9);
-    doc.setTextColor(bold ? COR_ESCURO[0] : COR_CINZA[0], bold ? COR_ESCURO[1] : COR_CINZA[1], bold ? COR_ESCURO[2] : COR_CINZA[2]);
-    doc.text(label, totalsX, y + 5);
-    doc.text(value, totalsX + totalsW, y + 5, { align: "right" });
-    y += 7;
-  }
-
-  // divider
-  doc.setDrawColor(...COR_CLARO);
-  doc.setLineWidth(0.4);
-  doc.line(ml, y, ml + cw, y);
-  y += 4;
-
-  drawTotalLine("Subtotal Serviços:", formatBRL(data.totalServicos));
-  drawTotalLine("Subtotal Peças:", formatBRL(data.totalPecas));
-
-  // Total box
-  doc.setFillColor(...COR_PRIMARIA);
-  doc.roundedRect(totalsX - 4, y, totalsW + 4, 10, 1.5, 1.5, "F");
-  doc.setFontSize(12);
+  // Subtotal serviços
+  yL += 2;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MID);
+  doc.text("Subtotal Serviços:", lx + 3, yL + 4.5);
   doc.setFont("helvetica", "bold");
-  doc.setTextColor(...COR_BRANCO);
-  doc.text("TOTAL GERAL:", totalsX, y + 7);
-  doc.text(formatBRL(data.total), totalsX + totalsW, y + 7, { align: "right" });
-  y += 16;
+  doc.setTextColor(...DARK);
+  doc.text(fmt(data.totalServicos), lx + colW - 2, yL + 4.5, { align: "right" });
+  yL += ROW + 3;
 
-  // ── OBSERVATIONS ─────────────────────────────────────────────────────────
-  if (data.observacoes) {
-    doc.setFillColor(...COR_CLARO);
-    doc.roundedRect(ml, y, cw, 5, 1, 1, "F");
-    doc.setFontSize(7.5);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...COR_PRIMARIA);
-    doc.text("OBSERVAÇÕES", ml + 4, y + 3.5);
-    y += 7;
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...COR_ESCURO);
-    const lines = doc.splitTextToSize(data.observacoes, cw - 6);
-    doc.text(lines, ml + 3, y);
-    y += lines.length * 5 + 4;
-  }
+  // ── RIGHT: PEÇAS ──────────────────────────────────────────────────────────
+  const pNomW = 34, pQtdW = 12, pUniW = 22, pTotW = colW - pNomW - pQtdW - pUniW;
+  let yR = sectionHeader(rx, y, "PEÇAS:");
+  const tableTopR = yR;
+  yR = colHeader(rx, yR, [
+    { label: "Peça",           cx: 0,                         cw: pNomW },
+    { label: "Qtde",           cx: pNomW,                     cw: pQtdW, right: true },
+    { label: "Valor Unit.(R$)", cx: pNomW + pQtdW,            cw: pUniW, right: true },
+    { label: "Total (R$)",     cx: pNomW + pQtdW + pUniW,    cw: pTotW, right: true },
+  ]);
 
-  // ── FOOTER ───────────────────────────────────────────────────────────────
-  const pageH = 297;
-  doc.setFillColor(...COR_CLARO);
-  doc.rect(0, pageH - 18, pw, 18, "F");
+  data.pecas.forEach((p, i) => {
+    const nome = p.nome.length > 18 ? p.nome.slice(0, 17) + "…" : p.nome;
+    yR = tableRow(rx, yR, i, [
+      { value: nome,                              cx: 0,                      cw: pNomW },
+      { value: String(p.quantidade),              cx: pNomW,                  cw: pQtdW, right: true },
+      { value: fmt(p.valorUnitario),              cx: pNomW + pQtdW,          cw: pUniW, right: true },
+      { value: fmt(p.quantidade * p.valorUnitario), cx: pNomW + pQtdW + pUniW, cw: pTotW, right: true, bold: true },
+    ], [pNomW, pNomW + pQtdW, pNomW + pQtdW + pUniW]);
+  });
+
+  // Table border
+  doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
+  doc.rect(rx, tableTopR, colW, yR - tableTopR, "D");
+
+  // Subtotal peças
+  yR += 2;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MID);
+  doc.text("Subtotal Peças:", rx + 3, yR + 4.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...DARK);
+  doc.text(fmt(data.totalPecas), rx + colW - 2, yR + 4.5, { align: "right" });
+  yR += ROW + 3;
+
+  y = Math.max(yL, yR) + 5;
+
+  // ── TOTAL GERAL ───────────────────────────────────────────────────────────
+  const tW = 96, tH = 13;
+  const tX = ml + cw - tW;
+  doc.setFillColor(...NAVY);
+  doc.rect(tX, y, tW, tH, "F");
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11.5);
+  doc.setTextColor(...WHITE);
+  doc.text("TOTAL GERAL:", tX + 5, y + 9);
+
+  doc.setFontSize(13.5);
+  doc.setTextColor(...ORANGE);
+  doc.text(`R$ ${fmt(data.total)}`, tX + tW - 4, y + 9, { align: "right" });
+
+  y += tH + 8;
+
+  // ── NOTAS DE RODAPÉ ───────────────────────────────────────────────────────
+  doc.setFont("helvetica", "italic");
   doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...COR_CINZA);
-  doc.text(
-    "Este orçamento tem validade de 15 dias. Valores sujeitos a alteração após o prazo.",
-    pw / 2,
-    pageH - 10,
-    { align: "center" }
-  );
-  doc.text(
-    `Responsável: ${data.responsavel}  •  Gerado em ${new Date().toLocaleString("pt-BR")}`,
-    pw / 2,
-    pageH - 4,
-    { align: "center" }
-  );
+  doc.setTextColor(...MID);
+  doc.text("* Garantia dos serviços conforme negociação.", ml, y);
+  y += 5;
+  doc.text("** A validade deste orçamento é de 7 dias.", ml, y);
 
-  // ── SAVE ─────────────────────────────────────────────────────────────────
+  if (data.observacoes) {
+    y += 7;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...NAVY);
+    doc.text("Observações:", ml, y);
+    y += 5;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...MID);
+    const lines = doc.splitTextToSize(data.observacoes, cw);
+    doc.text(lines, ml, y);
+  }
+
+  if (data.responsavel) {
+    y += 10;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...MID);
+    doc.text(`Responsável: ${data.responsavel}  •  Emitido em ${new Date().toLocaleString("pt-BR")}`, ml, y);
+  }
+
   doc.save(`Orcamento-${data.numero}.pdf`);
 }
