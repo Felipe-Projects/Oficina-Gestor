@@ -4,8 +4,8 @@ import {
   useGetOrdem, useCreateOrdem, useUpdateOrdem, 
   useListClientes, useListVeiculos, useListServicos, useListPecas 
 } from "@workspace/api-client-react";
-import { formatCurrency, cn } from "@/lib/utils";
-import { ArrowLeft, Save, Trash2, PlusCircle, FileDown, ChevronDown, ChevronUp, CalendarClock, Wrench, Plus } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { ArrowLeft, Save, Trash2, PlusCircle, FileDown, ChevronDown, ChevronUp, Wrench, Plus } from "lucide-react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { gerarOrcamentoPdf } from "@/lib/gerarOrcamentoPdf";
 import { apiRequest } from "@/lib/queryClient";
@@ -17,6 +17,7 @@ interface ManutencaoOSItem {
   proximaTrocaData: string;
   proximaTrocaKm: string;
   tempId: number;
+  linkedPecaTempId?: number;
 }
 
 interface PecaItem {
@@ -27,7 +28,6 @@ interface PecaItem {
   tempId: number;
   proximaTrocaData?: string | null;
   proximaTrocaKm?: number | null;
-  showTroca?: boolean;
 }
 
 export default function OrdemForm() {
@@ -92,7 +92,6 @@ export default function OrdemForm() {
         tempId: Math.random(),
         proximaTrocaData: p.proximaTrocaData ?? null,
         proximaTrocaKm: p.proximaTrocaKm ?? null,
-        showTroca: !!(p.proximaTrocaData || p.proximaTrocaKm),
       })));
     }
   }, [existingOs]);
@@ -179,7 +178,7 @@ export default function OrdemForm() {
       }
 
       for (const item of manutencaoItems) {
-        if (!item.nome.trim()) continue;
+        if (!item.proximaTrocaData && !item.proximaTrocaKm) continue;
         const mData = {
           nome: item.nome,
           ultimaTroca: item.ultimaTroca || null,
@@ -404,7 +403,26 @@ export default function OrdemForm() {
               <h2 className="text-lg font-display font-semibold">Peças (Estoque)</h2>
               <button 
                 type="button" 
-                onClick={() => setPecas([...pecas, { pecaId: pecasCat?.[0]?.id || 0, quantidade: 1, valorCusto: pecasCat?.[0]?.valorCusto || 0, valorUnitario: pecasCat?.[0]?.valorVenda || 0, tempId: Math.random(), showTroca: false }])}
+                onClick={() => {
+                  const tempId = Math.random();
+                  const firstPeca = pecasCat?.[0];
+                  setPecas(prev => [...prev, {
+                    pecaId: firstPeca?.id || 0,
+                    quantidade: 1,
+                    valorCusto: firstPeca?.valorCusto || 0,
+                    valorUnitario: firstPeca?.valorVenda || 0,
+                    tempId,
+                  }]);
+                  setManutencaoItems(prev => [...prev, {
+                    nome: firstPeca?.nome || "",
+                    ultimaTroca: new Date().toISOString().split("T")[0],
+                    proximaTrocaData: "",
+                    proximaTrocaKm: "",
+                    tempId: Math.random(),
+                    linkedPecaTempId: tempId,
+                  }]);
+                  setShowManutencao(true);
+                }}
                 className="text-primary hover:bg-primary/10 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1"
               >
                 <PlusCircle className="w-4 h-4" /> Add
@@ -422,6 +440,11 @@ export default function OrdemForm() {
                         const newId = Number(e.target.value);
                         const catInfo = pecasCat?.find(c => c.id === newId);
                         updatePeca(idx, { pecaId: newId, ...(catInfo ? { valorCusto: catInfo.valorCusto, valorUnitario: catInfo.valorVenda } : {}) });
+                        if (catInfo) {
+                          setManutencaoItems(prev => prev.map(m =>
+                            m.linkedPecaTempId === p.tempId ? { ...m, nome: catInfo.nome } : m
+                          ));
+                        }
                       }}
                       className="flex-1 min-w-0 px-3 py-2 bg-transparent outline-none text-sm"
                     >
@@ -455,55 +478,14 @@ export default function OrdemForm() {
                         step="0.01" min="0" title="Valor de Venda (vai para o orçamento)"
                       />
                     </div>
-                    <button
-                      type="button"
-                      title="Próxima troca"
-                      onClick={() => updatePeca(idx, { showTroca: !p.showTroca })}
-                      className={cn(
-                        "p-2 rounded-lg transition-colors",
-                        p.showTroca
-                          ? "text-primary bg-primary/10"
-                          : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-                      )}
-                    >
-                      <CalendarClock className="w-4 h-4" />
-                    </button>
-                    <button type="button" onClick={() => setPecas(pecas.filter(x => x.tempId !== p.tempId))} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                    <button type="button" onClick={() => {
+                      const tid = p.tempId;
+                      setPecas(pecas.filter(x => x.tempId !== tid));
+                      setManutencaoItems(prev => prev.filter(m => m.linkedPecaTempId !== tid));
+                    }} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-
-                  {/* Seção Próxima Troca */}
-                  {p.showTroca && (
-                    <div className="px-3 pb-3 pt-1 border-t border-border/40 bg-primary/5">
-                      <p className="text-xs font-semibold text-primary mb-2 flex items-center gap-1">
-                        <CalendarClock className="w-3.5 h-3.5" />
-                        Próxima Troca
-                      </p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground">Data prevista</label>
-                          <input
-                            type="date"
-                            value={p.proximaTrocaData ?? ""}
-                            onChange={e => updatePeca(idx, { proximaTrocaData: e.target.value || null })}
-                            className="w-full px-2 py-1.5 rounded-lg bg-background border border-border outline-none text-xs focus:border-primary"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-xs text-muted-foreground">Quilometragem (km)</label>
-                          <input
-                            type="number"
-                            value={p.proximaTrocaKm ?? ""}
-                            onChange={e => updatePeca(idx, { proximaTrocaKm: e.target.value ? Number(e.target.value) : null })}
-                            placeholder="Ex: 85000"
-                            className="w-full px-2 py-1.5 rounded-lg bg-background border border-border outline-none text-xs focus:border-primary"
-                            min="0"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
               {pecas.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">Nenhuma peça adicionada.</p>}
