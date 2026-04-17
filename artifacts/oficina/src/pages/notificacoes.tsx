@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { formatCurrency } from "@/lib/utils";
 import { Bell, Send, CheckCircle2, XCircle, Clock, AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -30,10 +29,12 @@ export default function Notificacoes() {
 
   const { data: config, isLoading: configLoading } = useQuery<NotificacaoConfig>({
     queryKey: ["/api/notificacoes/config"],
+    queryFn: () => apiRequest("GET", "/api/notificacoes/config"),
   });
 
-  const { data: logs = [] } = useQuery<NotificacaoLog[]>({
+  const { data: logs = [], refetch: refetchLogs } = useQuery<NotificacaoLog[]>({
     queryKey: ["/api/notificacoes/log"],
+    queryFn: () => apiRequest("GET", "/api/notificacoes/log"),
     enabled: showLog,
   });
 
@@ -63,9 +64,9 @@ export default function Notificacoes() {
   const dispararMutation = useMutation({
     mutationFn: () => apiRequest("POST", "/api/notificacoes/disparar"),
     onSuccess: (data: any) => {
-      qc.invalidateQueries({ queryKey: ["/api/notificacoes/log"] });
+      refetchLogs();
       toast({
-        title: `Disparo concluído`,
+        title: "Disparo concluído",
         description: `Enviados: ${data.enviados} | Erros: ${data.erros} | Ignorados: ${data.ignorados}`,
       });
     },
@@ -101,13 +102,14 @@ export default function Notificacoes() {
           <AlertCircle className="w-4 h-4" /> Como funciona
         </p>
         <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-          <li>A cada hora, o sistema verifica manutenções próximas do vencimento.</li>
+          <li>A cada hora o sistema verifica manutenções próximas do vencimento.</li>
           <li>Clientes com WhatsApp ou telefone cadastrado recebem mensagem automática.</li>
           <li>Você pode disparar manualmente a qualquer momento pelo botão abaixo.</li>
-          <li>Você precisa ter o número do cliente registrado em WhatsApp ou Telefone.</li>
           <li>
-            O número remetente é configurado na conta Twilio (sandbox:{" "}
-            <span className="font-mono">+14155238886</span>).
+            Número Twilio configurado:{" "}
+            <span className="font-mono font-semibold text-foreground">
+              {config?.numeroRemetente ?? "+17172948883"}
+            </span>
           </li>
         </ul>
       </div>
@@ -173,8 +175,8 @@ export default function Notificacoes() {
       <div className="bg-card rounded-2xl border border-border/50 shadow-sm p-6 space-y-4">
         <h2 className="text-lg font-display font-semibold">Disparo Manual</h2>
         <p className="text-sm text-muted-foreground">
-          Executa agora a verificação e envia mensagens para todos os clientes com manutenções próximas (dentro de{" "}
-          <strong>{form.diasAntecedencia} dias</strong>).
+          Executa agora a verificação e envia mensagens para todos os clientes com manutenções
+          previstas nos próximos <strong>{form.diasAntecedencia} dias</strong>.
         </p>
         <button
           onClick={() => dispararMutation.mutate()}
@@ -201,7 +203,11 @@ export default function Notificacoes() {
               </p>
             )}
           </div>
-          {showLog ? <ChevronUp className="w-5 h-5 text-muted-foreground" /> : <ChevronDown className="w-5 h-5 text-muted-foreground" />}
+          {showLog ? (
+            <ChevronUp className="w-5 h-5 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="w-5 h-5 text-muted-foreground" />
+          )}
         </button>
 
         {showLog && (

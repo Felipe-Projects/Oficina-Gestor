@@ -87,10 +87,11 @@ export async function runNotificacoesJob(): Promise<{ enviados: number; erros: n
       const client = await getTwilioClient();
       const fromNumber = await getTwilioFromNumber();
 
-      if (!fromNumber) throw new Error("Número remetente Twilio não configurado");
+      const remetente = config.numeroRemetente || fromNumber;
+      if (!remetente) throw new Error("Número remetente Twilio não configurado");
 
       await client.messages.create({
-        from: `whatsapp:${fromNumber}`,
+        from: `whatsapp:${remetente}`,
         to: `whatsapp:${formattedNumber}`,
         body: mensagem,
       });
