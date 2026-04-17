@@ -26,6 +26,7 @@ export default function Notificacoes() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [showLog, setShowLog] = useState(false);
+  const [forcarReenvio, setForcarReenvio] = useState(false);
 
   const { data: config, isLoading: configLoading } = useQuery<NotificacaoConfig>({
     queryKey: ["/api/notificacoes/config"],
@@ -62,7 +63,7 @@ export default function Notificacoes() {
   });
 
   const dispararMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/notificacoes/disparar"),
+    mutationFn: () => apiRequest("POST", `/api/notificacoes/disparar${forcarReenvio ? "?forcar=true" : ""}`),
     onSuccess: (data: any) => {
       refetchLogs();
       toast({
@@ -178,14 +179,25 @@ export default function Notificacoes() {
           Executa agora a verificação e envia mensagens para todos os clientes com manutenções
           previstas nos próximos <strong>{form.diasAntecedencia} dias</strong>.
         </p>
-        <button
-          onClick={() => dispararMutation.mutate()}
-          disabled={dispararMutation.isPending}
-          className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm transition-colors disabled:opacity-50"
-        >
-          <Send className="w-4 h-4" />
-          {dispararMutation.isPending ? "Disparando..." : "Disparar notificações agora"}
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => dispararMutation.mutate()}
+            disabled={dispararMutation.isPending}
+            className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm transition-colors disabled:opacity-50"
+          >
+            <Send className="w-4 h-4" />
+            {dispararMutation.isPending ? "Disparando..." : "Disparar notificações agora"}
+          </button>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={forcarReenvio}
+              onChange={(e) => setForcarReenvio(e.target.checked)}
+              className="accent-primary"
+            />
+            Forçar reenvio (incluir já notificados)
+          </label>
+        </div>
       </div>
 
       {/* Log */}

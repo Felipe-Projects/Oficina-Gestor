@@ -53,9 +53,11 @@ router.get("/log", async (_req, res) => {
 });
 
 // POST /api/notificacoes/disparar — executa o job imediatamente
-router.post("/disparar", async (_req, res) => {
+// query param: ?forcar=true para reenviar mesmo quem já foi notificado
+router.post("/disparar", async (req, res) => {
+  const forcar = req.query.forcar === "true";
   try {
-    const result = await runNotificacoesJob();
+    const result = await runNotificacoesJob(forcar);
     res.json(result);
   } catch (err: any) {
     res.status(500).json({ error: err.message });

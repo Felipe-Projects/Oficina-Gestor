@@ -24,10 +24,10 @@ function formatPhone(raw: string): string {
   return `+55${digits}`;
 }
 
-export async function runNotificacoesJob(): Promise<{ enviados: number; erros: number; ignorados: number }> {
+export async function runNotificacoesJob(forcarReenvio = false): Promise<{ enviados: number; erros: number; ignorados: number }> {
   const config = await getConfig();
 
-  if (!config.ativo) {
+  if (!config.ativo && !forcarReenvio) {
     return { enviados: 0, erros: 0, ignorados: 0 };
   }
 
@@ -61,11 +61,26 @@ export async function runNotificacoesJob(): Promise<{ enviados: number; erros: n
       )
     );
 
+  // Se não for reenvio forçado, pula quem já foi notificado com sucesso
+  let itensPendentes = itens;
+  let jaIgnorados = 0;
+
+  if (!forcarReenvio) {
+    const jaNotificadosResult = await db
+      .select({ manutencaoId: notificacoesLogTable.manutencaoId })
+      .from(notificacoesLogTable)
+      .where(eq(notificacoesLogTable.status, "enviado"));
+
+    const jaNotificadosSet = new Set(jaNotificadosResult.map((r) => r.manutencaoId));
+    itensPendentes = itens.filter((item) => !jaNotificadosSet.has(item.id));
+    jaIgnorados = itens.length - itensPendentes.length;
+  }
+
   let enviados = 0;
   let erros = 0;
-  let ignorados = 0;
+  let ignorados = jaIgnorados;
 
-  for (const item of itens) {
+  for (const item of itensPendentes) {
     const numero = item.clienteWhatsapp || item.clienteTelefone;
     if (!numero || numero.trim() === "") {
       ignorados++;
