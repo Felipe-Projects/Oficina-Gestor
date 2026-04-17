@@ -10,6 +10,7 @@ import dashboardRouter from "./dashboard";
 import manutencaoRouter from "./manutencao";
 import agendamentosRouter from "./agendamentos";
 import backupRouter from "./backup";
+import notificacoesRouter from "./notificacoes";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use("/dashboard", dashboardRouter);
 router.use("/manutencao", manutencaoRouter);
 router.use("/agendamentos", agendamentosRouter);
 router.use("/backup", backupRouter);
+router.use("/notificacoes", notificacoesRouter);
 
 export default router;

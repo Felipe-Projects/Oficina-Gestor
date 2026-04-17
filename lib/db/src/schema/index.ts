@@ -8,3 +8,4 @@ export * from "./manutencao";
 export * from "./agendamentos";
 export * from "./dias-bloqueados";
 export * from "./backups";
+export * from "./notificacoes";

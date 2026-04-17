@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { criarBackupAutomatico } from "./routes/backup";
+import { startNotificacoesScheduler } from "./jobs/notificacoesJob";
 
 const rawPort = process.env["PORT"];
 
@@ -25,6 +26,7 @@ app.listen(port, (err) => {
   logger.info({ port }, "Server listening");
 
   criarBackupAutomatico().catch(() => {});
+  startNotificacoesScheduler();
 
   setInterval(
     () => criarBackupAutomatico().catch(() => {}),
