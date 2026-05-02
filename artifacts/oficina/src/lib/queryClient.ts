@@ -8,7 +8,15 @@ export async function apiRequest(method: string, url: string, data?: unknown): P
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(text || `HTTP ${res.status}`);
+    let message = text || `HTTP ${res.status}`;
+    try {
+      const json = JSON.parse(text);
+      if (json?.error) message = json.error;
+      else if (json?.message) message = json.message;
+    } catch {
+      // texto plano — mantém como está
+    }
+    throw new Error(message);
   }
   if (res.status === 204) return null;
   return res.json();

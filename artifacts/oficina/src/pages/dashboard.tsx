@@ -50,7 +50,7 @@ function StatCard({ title, value, subtitle, icon: Icon, colorClass, delay }: any
 }
 
 export default function Dashboard() {
-  const { data: dashboard, isLoading } = useGetDashboard();
+  const { data: dashboard, isLoading, isError, error } = useGetDashboard();
   const { data: alertas } = useQuery<Alerta[]>({
     queryKey: ["/api/manutencao/alertas"],
     queryFn: () => apiRequest("GET", "/api/manutencao/alertas"),
@@ -65,7 +65,29 @@ export default function Dashboard() {
     );
   }
 
-  if (!dashboard) return <div>Erro ao carregar dashboard</div>;
+  if (isError || !dashboard) {
+    const msg = error instanceof Error ? error.message : String(error ?? "Não foi possível conectar à API.");
+    return (
+      <div className="flex flex-col items-center justify-center h-full min-h-[60vh] gap-4 text-center px-6">
+        <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <AlertTriangle className="w-8 h-8 text-destructive" />
+        </div>
+        <div>
+          <h2 className="text-xl font-semibold text-foreground mb-1">Erro ao carregar dashboard</h2>
+          <p className="text-sm text-muted-foreground max-w-md">{msg}</p>
+        </div>
+        <details className="text-xs text-muted-foreground bg-muted rounded-lg px-4 py-2 max-w-lg w-full text-left">
+          <summary className="cursor-pointer font-medium">Dicas para resolver</summary>
+          <ul className="mt-2 space-y-1 list-disc list-inside">
+            <li>Verifique se a variável <code>DATABASE_URL</code> está configurada corretamente</li>
+            <li>Execute as migrações: <code>pnpm --filter @workspace/db run push</code></li>
+            <li>Verifique se o servidor de API está rodando e acessível em <code>/api</code></li>
+            <li>Confirme que <code>NODE_ENV=production</code> está definido ao iniciar o servidor</li>
+          </ul>
+        </details>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-12">
